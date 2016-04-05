@@ -25,6 +25,7 @@ def defineSpecificProgramOptions():
     parser.add_argument('catalogs', nargs='+', type=str,  help='Catalogs to merge')
     parser.add_argument('--outputcat', type=str, help='Output catalog')
     parser.add_argument('--filters', nargs='+', type=str, help='Filter names (used to tag the output catalogs)')
+    parser.add_argument('--tol', type=float, help='Maximum distance for source association in degrees.')
     
     return parser
 
@@ -47,11 +48,10 @@ def mainMethod(args):
     # !! e.g string_option = args.string_value
 
     catalogs = []
-    #incatalogs = ['c4d_131013_074936_ooi_g_d1.txt','c4d_131013_075136_ooi_r_d1.txt']
     for cat in args.catalogs :
         catalogs.append(ascii.read(cat,format="sextractor"))
     
-    mergedcat = catalog.mergecats(catalogs,delta=1.5e-4,filters=args.filters)
+    mergedcat = catalog.mergecats(catalogs,delta=args.tol,filters=args.filters)
     with open(args.outputcat, 'w') as f :
         ascii.write(mergedcat, f)
         
