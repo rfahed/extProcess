@@ -24,6 +24,9 @@ def defineSpecificProgramOptions():
 
     #
     # !!! Write your program options here !!!
+    parser.add_argument('--wcs', action='store_true',
+                      help='Region file in wcs coordinates',
+                      default=False)
     parser.add_argument('--catalog', type=str, help='Ascii catalog file.')
     parser.add_argument('--format',  type=str, help='Format of input catalog')
     parser.add_argument('--symbol',  type=str, help='Symbol to draw')
@@ -61,7 +64,7 @@ def mainMethod(args):
     if args.subtag is None :
         args.subtag = ''
         
-    catalog.toRegionFile(cat, regionfile, symbol = args.symbol, subtag=args.subtag)
+    catalog.toRegionFile(cat, regionfile, symbol = args.symbol, subtag=args.subtag, wcs=args.wcs)
     #
 
     logger.info('#')

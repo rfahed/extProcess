@@ -8,6 +8,7 @@ from astropy.coordinates import ICRS, SkyCoord
 from astropy import table
 from astropy import units as u
 import numpy as np
+import matplotlib.pyplot as p
 
 NEWLINE = '\n'
 
@@ -28,6 +29,30 @@ def mergecats(catalogs=None,delta=1e-4,filters=None,poskeys=['X_WORLD','Y_WORLD'
             
     return mergedcat
 
+def add_diff_column(catalog,field1,field2,outputfield=None):
+    if outputfield is None:
+        outputfield = "diff_{}_{}".format(field1,field2)
+    diff = table.Column(name=outputfield,data=catalog[field1]-catalog[field2])
+    catalog.add_column(diff)
+    
+    
+def plotcols(catalog,field1,field2,show=False):    
+    p.plot(catalog[field1],catalog[field2])
+    p.grid()
+    if show:
+        p.show()
+        
+def scattercols(catalog,field1,field2,show=False):    
+    p.scatter(catalog[field1],catalog[field2],marker='+')
+    p.grid()
+    if show:
+        p.show()
+    
+def histogramcol(catalog,field,nbins,show=False,**kwargs):
+    n, bins, patches = p.hist(np.array(catalog[field]),50,**kwargs)
+    if show:
+        p.show()
+    
 def tag_catalog(catalog, tag):
     for cname in catalog.colnames :
         catalog.rename_column(cname,cname+'_'+tag)
@@ -53,7 +78,7 @@ def mergecat(catalog1,catalog2, delta=1e-4, poskeys1=['X_WORLD','Y_WORLD'], posk
         return (catalog1,catalog2)
 
 
-def toRegionFile(catalog, filename, symbol = 'ellipse', subtag=''):
+def toRegionFile(catalog, filename, symbol = 'ellipse', subtag='',wcs=False):
 #        
 #   Dumps the catalog into a ds9 region file with symbols = "ellipse" or "point".
 #   
@@ -61,19 +86,29 @@ def toRegionFile(catalog, filename, symbol = 'ellipse', subtag=''):
         subtag = '_'+subtag    
     f = open(filename,'w')
     writer = Writer(f)
+    if wcs :
+        coordtag='_WORLD'
+        coordid='linear;'
+    else :
+        coordtag='_IMAGE'
+        #coordid='image;'
+        coordid='image;'
+        
+    fulltag = coordtag+subtag
+    
     if symbol=="ellipse" :
         for i in xrange(0,len(catalog)) :
-            writer.write_row(['fk5; ellipse ',
-                              catalog['X_WORLD'+subtag][i],
-                              catalog['Y_WORLD'+subtag][i],
-                              catalog['A_WORLD'+subtag][i],
-                              catalog['B_WORLD'+subtag][i],
-                              catalog['THETA_WORLD'+subtag][i]])
+            writer.write_row([coordid, 'ellipse',
+                              catalog['X'+fulltag][i],
+                              catalog['Y'+fulltag][i],
+                              catalog['A'+fulltag][i],
+                              catalog['B'+fulltag][i],
+                              catalog['THETA'+fulltag][i]])
     if symbol=="point" :
         for i in xrange(0,len(catalog)) :
-            writer.write_row(['fk5; x point ',
-                              catalog['X_WORLD'+subtag][i],
-                              catalog['Y_WORLD'+subtag][i]])
+            writer.write_row([coordid, 'x point ',
+                              catalog['X'+fulltag][i],
+                              catalog['Y'+fulltag][i]])
     f.close()
     
 class Writer :
