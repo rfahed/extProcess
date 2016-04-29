@@ -26,6 +26,7 @@ def defineSpecificProgramOptions():
     parser.add_argument('--outputcat', type=str, help='Output catalog')
     parser.add_argument('--filters', nargs='+', type=str, help='Filter names (used to tag the output catalogs)')
     parser.add_argument('--tol', type=float, help='Maximum distance for source association in degrees.')
+    parser.add_argument('--format', nargs='+', type=str, help='Format of header')
     
     return parser
 
@@ -48,8 +49,10 @@ def mainMethod(args):
     # !! e.g string_option = args.string_value
 
     catalogs = []
-    for cat in args.catalogs :
-        catalogs.append(ascii.read(cat,format="sextractor"))
+    for i,cat in enumerate(args.catalogs) :
+	if len(args.format) > 1:
+		ft = args.format[i] 
+        catalogs.append(ascii.read(cat,format=ft))
     
     mergedcat = catalog.mergecats(catalogs,delta=args.tol,filters=args.filters)
     with open(args.outputcat, 'w') as f :
