@@ -36,20 +36,47 @@ def add_diff_column(catalog,field1,field2,outputfield=None):
     catalog.add_column(diff)
     
     
-def plotcols(catalog,field1,field2,show=False):    
+def plotcols(catalog,field1,field2,title=None,xlab=None,ylab=None,show=False):    
     p.plot(catalog[field1],catalog[field2])
+    p.title(title,size=20)
+    if xlab is None :
+	xlab = field1
+    if ylab is None :
+	ylab = field2
+    p.xlabel(xlab,size=20)
+    p.ylabel(ylab,size=20)
+    p.xticks(size=20)
+    p.yticks(size=20)
     p.grid()
     if show:
         p.show()
         
-def scattercols(catalog,field1,field2,show=False):    
+def scattercols(catalog,field1,field2,title=None,xlab=None,ylab=None,show=False):    
     p.scatter(catalog[field1],catalog[field2],marker='+')
+    p.title(title,size=20)
+    if xlab is None :
+	xlab = field1
+    if ylab is None :
+	ylab = field2
+    p.xlabel(xlab,size=20)
+    p.ylabel(ylab,size=20)
+    p.xticks(size=20)
+    p.yticks(size=20)
     p.grid()
     if show:
         p.show()
     
-def histogramcol(catalog,field,nbins,show=False,**kwargs):
+def histogramcol(catalog,field,nbins,title=None,xlab=None,ylab=None,show=False,**kwargs):
     n, bins, patches = p.hist(np.array(catalog[field]),50,**kwargs)
+    p.title(title,size=20)
+    if xlab is None :
+	xlab = field1
+    if ylab is None :
+	ylab = field2
+    p.xlabel(xlab,size=20)
+    p.ylabel(ylab,size=20)
+    p.xticks(size=20)
+    p.yticks(size=20)
     if show:
         p.show()
     
