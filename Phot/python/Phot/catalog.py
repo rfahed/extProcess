@@ -66,17 +66,20 @@ def scattercols(catalog,field1,field2,title=None,xlab=None,ylab=None,show=False)
     if show:
         p.show()
     
-def histogramcol(catalog,field,nbins,title=None,xlab=None,ylab=None,show=False,**kwargs):
-    n, bins, patches = p.hist(np.array(catalog[field]),50,**kwargs)
+def histogramcol(catalog,field,nbins,title=None,xlab=None,ylab="Counts",log=False,show=False,**kwargs):
+    if log:
+        n, bins, patches = p.hist(np.array(catalog[field]),50,log=True,alpha=0.5,label=title,**kwargs)
+    else:
+        n, bins, patches = p.hist(np.array(catalog[field]),50,**kwargs)
     p.title(title,size=20)
     if xlab is None :
-	xlab = field1
-    if ylab is None :
-	ylab = field2
+	xlab = field
     p.xlabel(xlab,size=20)
     p.ylabel(ylab,size=20)
     p.xticks(size=20)
     p.yticks(size=20)
+    p.legend(loc='upper right')
+    p.grid()
     if show:
         p.show()
     
