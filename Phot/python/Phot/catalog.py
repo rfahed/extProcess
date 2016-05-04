@@ -4,13 +4,19 @@
 @author user
 """
 
+import ElementsKernel.Logging as log
+logger = log.getLogger('catalog')
 from astropy.coordinates import ICRS, SkyCoord
 from astropy import table
 from astropy import units as u
+from astropy.io import ascii
 import numpy as np
 import matplotlib.pyplot as p
+import sys
+
 
 NEWLINE = '\n'
+
 
 def mergecats(catalogs=None,delta=1e-4,filters=None,poskeys=['X_WORLD','Y_WORLD'],stack=True):
     ncat = len(catalogs)
@@ -140,7 +146,34 @@ def toRegionFile(catalog, filename, symbol = 'ellipse', subtag='',wcs=False):
                               catalog['X'+fulltag][i],
                               catalog['Y'+fulltag][i]])
     f.close()
+
+def read(catfile):
+    reader = ascii.CommentedHeader()
+    with open(catfile,'r') as f:
+        header = f.readline()
+        try :
+            while header[0] != '#' and header != '':
+                header = f.readline()
+        except IndexError:
+            logger.error('No header found in catalog file...')
+            sys.exit()
+            
+        header = header[1:-1].split()
+        ncols = len(header)
+
+    reader.data.splitter.process_line = lambda x:process_line(x,ncols)
+    return reader.read(catfile)
     
+def process_line(x,ncols):
+    splitx=x.split()
+    nx = len(splitx)
+    deltacol = ncols - nx
+    if deltacol > 1:
+        splitx += ['0']*deltacol
+    
+    return ' '.join(splitx)
+    
+
 class Writer :
     def __init__(self, f):
         self.f = f
