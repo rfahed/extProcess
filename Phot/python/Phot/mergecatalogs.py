@@ -52,11 +52,11 @@ def mainMethod(args):
     for i,cat in enumerate(args.catalogs) :
 	if len(args.format) > 1:
 		ft = args.format[i] 
-        catalogs.append(ascii.read(cat,format=ft))
+        catalogs.append(catalog.read(cat,format=ft))
     
     mergedcat = catalog.mergecats(catalogs,delta=args.tol,filters=args.filters)
     with open(args.outputcat, 'w') as f :
-        ascii.write(mergedcat, f)
+        ascii.write(mergedcat, f,Writer=ascii.CommentedHeader)
         
     logger.info('# Percentage of matched objects : {} %'.format(100*(len(mergedcat)/len(catalogs[0]))))
 

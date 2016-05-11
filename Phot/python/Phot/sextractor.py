@@ -7,7 +7,7 @@
 import argparse
 import ElementsKernel.Logging as log
 from . import utils
-from . import photometry
+from . import image
 
 def defineSpecificProgramOptions():
     """
@@ -25,10 +25,12 @@ def defineSpecificProgramOptions():
     #
     # !!! Write your program options here !!!
     parser.add_argument('image', metavar='image', type=str, help='input fits image')
-    parser.add_argument('-c', '--clobber', action='store_true',
-                      help='force overwriting files',
-                      default=False,
-                      dest='clobber')
+    parser.add_argument('--zerokey', type=str, help='zeropoint key in fits header')
+    parser.add_argument('--zeropoint', type=str, help='zeropoint type (PER_S or INTEGRATED)')
+    #parser.add_argument('-c', '--clobber', action='store_true',
+    #                  help='force overwriting files',
+    #                  default=False,
+    #                  dest='clobber')
     #
 
     return parser
@@ -48,9 +50,12 @@ def mainMethod(args):
     logger.info('# Entering sextractor mainMethod()')
     logger.info('#')
     
-    photometry.sex(args.image)
-
+    if args.zeropoint == "PER_S":
+        zeropoint = image.get_zeropoint(args.image,apply_exptime=True,zerokey=args.zerokey)
+    elif args.zeropoint == "INTEGRATED":
+        zeropoint = image.get_zeropoint(args.image,apply_exptime=False,zerokey=args.zerokey)
     
+    image.sex(args.image,zeropoint)
     
     # !! Getting the option from the example option in defineSpecificProgramOption 
     # !! e.g string_option = args.string_value

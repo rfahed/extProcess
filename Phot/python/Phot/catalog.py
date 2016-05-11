@@ -72,14 +72,12 @@ def scattercols(catalog,field1,field2,title=None,xlab=None,ylab=None,show=False)
     if show:
         p.show()
     
-def histogramcol(catalog,field,nbins,title=None,xlab=None,ylab="Counts",log=False,show=False,**kwargs):
-    if log:
-        n, bins, patches = p.hist(np.array(catalog[field]),50,log=True,alpha=0.5,label=title,**kwargs)
-    else:
-        n, bins, patches = p.hist(np.array(catalog[field]),50,**kwargs)
-    p.title(title,size=20)
+def histogramcol(catalog,field,nbins,title=None,xlab=None,ylab="Counts",show=False,**kwargs):
     if xlab is None :
 	xlab = field
+    if title is None:
+	title = field
+    n, bins, patches = p.hist(np.array(catalog[field]),nbins, alpha=0.5,**kwargs)
     p.xlabel(xlab,size=20)
     p.ylabel(ylab,size=20)
     p.xticks(size=20)
@@ -147,7 +145,13 @@ def toRegionFile(catalog, filename, symbol = 'ellipse', subtag='',wcs=False):
                               catalog['Y'+fulltag][i]])
     f.close()
 
-def read(catfile):
+def read(catfile,format=None):
+    if format=="ext" :
+	return readext(catfile)
+    else : 
+        return ascii.read(catfile,format=format)
+
+def readext(catfile):
     reader = ascii.CommentedHeader()
     with open(catfile,'r') as f:
         header = f.readline()
