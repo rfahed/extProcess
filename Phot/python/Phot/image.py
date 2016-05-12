@@ -9,14 +9,20 @@ import subprocess, os, sys
 from . import utils
 from astropy.io import fits
 import numpy as np
+from string import Template
 
 
-def sex(imname, zeropoint=0):
+def sex(imname, zeropoint=0,outputcat=None):
+    with open(utils.getAuxPathFile("default.sex.template"),'r') as f :
+        conftemp = Template(f.read())
+    conf = conftemp.substitute({'zeropoint':str(zeropoint)})
+    with open("default.sex",'w') as f :
+	f.write(conf)
+    if outputcat is None :
+    	outputcat = utils.rm_extension(imname)+".txt"
 
-    catalog_name = utils.rm_extension(imname)+".txt"
-    cmd = ["sex",imname,"-c",utils.getAuxPathFile("default.sex")]
-    cmd += ["-MAG_ZEROPOINT",str(zeropoint)]
-    cmd += ["-CATALOG_NAME",catalog_name]
+    cmd = ["sex",imname,"-c","default.sex"]
+    cmd += ["-CATALOG_NAME",outputcat]
     cmd += ["-PARAMETERS_NAME",utils.getAuxPathFile("default.param")]
     cmd += ["-FILTER_NAME",utils.getAuxPathFile("gauss_5.0_9x9.conv")]
     cmd += ["-STARNNW_NAME",utils.getAuxPathFile("default.nnw")]
@@ -37,5 +43,6 @@ def get_zeropoint(imname,apply_exptime=False,zerokey="MAGZERO"):
 	zeropoint += 2.5*np.log10(im[0].header['EXPTIME'])
 
     logger.info("Mag zeropoint : {}".format(zeropoint))
+    return zeropoint
 
 

@@ -27,6 +27,8 @@ def defineSpecificProgramOptions():
     parser.add_argument('image', metavar='image', type=str, help='input fits image')
     parser.add_argument('--zerokey', type=str, help='zeropoint key in fits header')
     parser.add_argument('--zeropoint', type=str, help='zeropoint type (PER_S or INTEGRATED)')
+    parser.add_argument('--outputcat', type=str, help='Output catalog file name')
+    
     #parser.add_argument('-c', '--clobber', action='store_true',
     #                  help='force overwriting files',
     #                  default=False,
@@ -55,7 +57,7 @@ def mainMethod(args):
     elif args.zeropoint == "INTEGRATED":
         zeropoint = image.get_zeropoint(args.image,apply_exptime=False,zerokey=args.zerokey)
     
-    image.sex(args.image,zeropoint)
+    image.sex(args.image,zeropoint,outputcat=args.outputcat)
     
     # !! Getting the option from the example option in defineSpecificProgramOption 
     # !! e.g string_option = args.string_value
