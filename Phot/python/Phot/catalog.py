@@ -40,10 +40,27 @@ def add_diff_column(catalog,field1,field2,outputfield=None):
         outputfield = "diff_{}_{}".format(field1,field2)
     diff = table.Column(name=outputfield,data=catalog[field1]-catalog[field2])
     catalog.add_column(diff)
-    
-    
-def plotcols(catalog,field1,field2,title=None,xlab=None,ylab=None,show=False):    
-    p.plot(catalog[field1],catalog[field2])
+
+def add_sum_column(catalog,field1,field2,outputfield=None):
+    if outputfield is None:
+        outputfield = "sum_{}_{}".format(field1,field2)
+    diff = table.Column(name=outputfield,data=catalog[field1]+catalog[field2])
+    catalog.add_column(diff)
+
+def add_frac_column(catalog,field1,field2,outputfield=None):
+    if outputfield is None:
+        outputfield = "frac_{}_{}".format(field1,field2)
+    diff = table.Column(name=outputfield,data=catalog[field1]/catalog[field2])
+    catalog.add_column(diff)
+
+def add_prod_column(catalog,field1,field2,outputfield=None):
+    if outputfield is None:
+        outputfield = "prod_{}_{}".format(field1,field2)
+    diff = table.Column(name=outputfield,data=catalog[field1]*catalog[field2])
+    catalog.add_column(diff)
+
+def plotcols(catalog,field1,field2,title=None,xlab=None,ylab=None,show=False,**kwargs):    
+    p.plot(catalog[field1],catalog[field2],**kwargs)
     p.title(title,size=20)
     if xlab is None :
 	xlab = field1
@@ -57,13 +74,17 @@ def plotcols(catalog,field1,field2,title=None,xlab=None,ylab=None,show=False):
     if show:
         p.show()
         
-def scattercols(catalog,field1,field2,title=None,xlab=None,ylab=None,show=False):    
-    p.scatter(catalog[field1],catalog[field2],marker='+')
+def scattercols(catalog,field1,field2,title=None,xlab=None,ylab=None,log=False,show=False,**kwargs):    
+    p.scatter(catalog[field1],catalog[field2],marker='+',**kwargs)
     p.title(title,size=20)
     if xlab is None :
 	xlab = field1
     if ylab is None :
 	ylab = field2
+    if log:
+        ax=p.gca()
+        ax.set_yscale('log')
+
     p.xlabel(xlab,size=20)
     p.ylabel(ylab,size=20)
     p.xticks(size=20)
