@@ -35,6 +35,12 @@ def mergecats(catalogs=None,delta=1e-4,filters=None,poskeys=['X_WORLD','Y_WORLD'
             
     return mergedcat
 
+def add_calc_column(catalog,field1,field2,func,outputfield=None):
+    if outputfield is None:
+        outputfield = "calc_{}_{}".format(field1,field2)
+    diff = table.Column(name=outputfield,data=func(catalog[field1],catalog[field2]))
+    catalog.add_column(diff)
+
 def add_diff_column(catalog,field1,field2,outputfield=None):
     if outputfield is None:
         outputfield = "diff_{}_{}".format(field1,field2)

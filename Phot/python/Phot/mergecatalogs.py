@@ -58,7 +58,11 @@ def mainMethod(args):
     with open(args.outputcat, 'w') as f :
         ascii.write(mergedcat, f,Writer=ascii.CommentedHeader)
         
-    logger.info('# Percentage of matched objects : {} %'.format(100*(len(mergedcat)/len(catalogs[0]))))
+    logger.info('# Percentage of cat 1 matched : {} %'.format(100*(len(mergedcat)/len(catalogs[0]))))
+    logger.info('# Percentage of cat 2 matched : {} %'.format(100*(len(mergedcat)/len(catalogs[1]))))
+    logger.info('# Size ratio cat 2 / cat 1 : {} %'.format(100*(len(catalogs[1])/len(catalogs[0]))))
+
+
 
     logger.info('#')
     logger.info('# Exiting mergecatalogs mainMethod()')
