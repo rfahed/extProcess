@@ -54,7 +54,10 @@ def mainMethod(args):
 		ft = args.format[i] 
         catalogs.append(catalog.read(cat,format=ft))
     
-    mergedcat = catalog.mergecats(catalogs,delta=args.tol,filters=args.filters)
+    if len(args.catalogs) == 2:
+        mcats=[utils.rm_extension(c)+'_matchtag.txt' for c in args.catalogs]
+    mergedcat = catalog.mergecats(catalogs,delta=args.tol,filters=args.filters,mcats=mcats)
+
     with open(args.outputcat, 'w') as f :
         ascii.write(mergedcat, f,Writer=ascii.CommentedHeader)
         

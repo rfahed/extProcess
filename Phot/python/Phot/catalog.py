@@ -6,20 +6,23 @@
 
 import ElementsKernel.Logging as log
 logger = log.getLogger('catalog')
+from . import utils
 from astropy.coordinates import ICRS, SkyCoord
 from astropy import table
 from astropy import units as u
 from astropy.io import ascii
 import numpy as np
-import matplotlib.pyplot as p
+import matplotlib.pyplot as P
 import sys
 
 
 NEWLINE = '\n'
 
 
-def mergecats(catalogs=None,delta=1e-4,filters=None,poskeys=['X_WORLD','Y_WORLD'],stack=True):
+def mergecats(catalogs=None,delta=1e-4,filters=None,poskeys=['X_WORLD','Y_WORLD'],stack=True,mcats=None):
     ncat = len(catalogs)
+    if ncat > 2 :
+        mcats=None
     if filters and stack :
         _poskeys = []
         for i in range(ncat) :
@@ -27,11 +30,12 @@ def mergecats(catalogs=None,delta=1e-4,filters=None,poskeys=['X_WORLD','Y_WORLD'
             _poskeys.append([x+'_'+filters[i] for x in poskeys])
       
     mergedcat = catalogs[0]
+
     for i in range(1,ncat):
         if filters :
-            mergedcat=mergecat(mergedcat,catalogs[i],poskeys1=_poskeys[0],poskeys2=_poskeys[i],delta=delta,stack=stack)
+            mergedcat=mergecat(mergedcat,catalogs[i],poskeys1=_poskeys[0],poskeys2=_poskeys[i],delta=delta,stack=stack,mcats=mcats)
         else :
-            mergedcat=mergecat(mergedcat,catalogs[i], poskeys1=poskeys, poskeys2=poskeys, delta=delta,stack=stack)
+            mergedcat=mergecat(mergedcat,catalogs[i], poskeys1=poskeys, poskeys2=poskeys, delta=delta,stack=stack,mcats=mcats)
             
     return mergedcat
 
@@ -65,53 +69,50 @@ def add_prod_column(catalog,field1,field2,outputfield=None):
     diff = table.Column(name=outputfield,data=catalog[field1]*catalog[field2])
     catalog.add_column(diff)
 
-def plotcols(catalog,field1,field2,title=None,xlab=None,ylab=None,show=False,**kwargs):    
+def plotcols(catalog,field1,field2,title=None,xlab=None,ylab=None,show=False,p=P,**kwargs):      
     p.plot(catalog[field1],catalog[field2],**kwargs)
-    p.title(title,size=20)
+    p.title(title)
     if xlab is None :
 	xlab = field1
     if ylab is None :
 	ylab = field2
-    p.xlabel(xlab,size=20)
-    p.ylabel(ylab,size=20)
-    p.xticks(size=20)
-    p.yticks(size=20)
+    p.xlabel(xlab)
+    p.ylabel(ylab)
     p.grid()
     if show:
         p.show()
         
-def scattercols(catalog,field1,field2,title=None,xlab=None,ylab=None,log=False,show=False,**kwargs):    
+def scattercols(catalog,field1,field2,title=None,xlab=None,ylab=None,log=False,show=False,p=P,**kwargs):    
     p.scatter(catalog[field1],catalog[field2],marker='+',**kwargs)
-    p.title(title,size=20)
+    if title :    
+	    p.title(title)
     if xlab is None :
-	xlab = field1
+	    xlab = field1
     if ylab is None :
-	ylab = field2
+	    ylab = field2
     if log:
         ax=p.gca()
         ax.set_yscale('log')
 
-    p.xlabel(xlab,size=20)
-    p.ylabel(ylab,size=20)
-    p.xticks(size=20)
-    p.yticks(size=20)
+    p.xlabel(xlab)
+    p.ylabel(ylab)
     p.grid()
     if show:
         p.show()
     
-def histogramcol(catalog,field,xlab=None,ylab="Counts",show=False,**kwargs):
+def histogramcol(catalog,field,xlab=None,ylab="Counts",show=False,p=P,**kwargs):
     if xlab is None :
 	xlab = field
     n, bins, patches = p.hist(np.array(catalog[field]), alpha=0.5,**kwargs)
-    p.xlabel(xlab,size=20)
-    p.ylabel(ylab,size=20)
-    p.xticks(size=20)
-    p.yticks(size=20)
+    p.xlabel(xlab)
+    p.ylabel(ylab)
     p.legend(loc='upper right')
     p.grid()
     if show:
         p.show()
-    
+
+    return n, bins, patches    
+
 def tag_catalog(catalog, tag):
     for cname in catalog.colnames :
         catalog.rename_column(cname,cname+'_'+tag)
@@ -122,12 +123,26 @@ def matchcats(p1,p2,delta=1e-4):
     imatch = np.where(dist2d < delta*u.degree)
     return (imatch, index[imatch])
 
-def mergecat(catalog1,catalog2, delta=1e-4, poskeys1=['X_WORLD','Y_WORLD'], poskeys2=['X_WORLD','Y_WORLD'], stack=True):    
+def mergecat(catalog1,catalog2, delta=1e-4, poskeys1=['X_WORLD','Y_WORLD'], poskeys2=['X_WORLD','Y_WORLD'], mcats=['cat1_w_matchtags.txt','cat2_w_matchtags.txt'], stack=True):    
     p1=SkyCoord(catalog1[poskeys1[0]],catalog1[poskeys1[1]],frame='icrs',unit="deg")
     p2=SkyCoord(catalog2[poskeys2[0]],catalog2[poskeys2[1]],frame='icrs',unit="deg")
     
     imatch1, imatch2 = matchcats(p1,p2,delta=delta)
-    
+    m1=np.zeros(len(catalog1),dtype=int)
+    m1[imatch1]=1
+    m2=np.zeros(len(catalog2),dtype=int)
+    m2[imatch2]=1
+    matched1=table.Column(name='MATCHED',data=m1)
+    matched2=table.Column(name='MATCHED',data=m2)
+
+    if mcats :
+        catalog1.add_column(matched1)
+        catalog2.add_column(matched2)
+        with open(mcats[0], 'w') as f :
+            ascii.write(catalog1, f,Writer=ascii.CommentedHeader)
+        with open(mcats[1], 'w') as f :
+            ascii.write(catalog2, f,Writer=ascii.CommentedHeader)
+
     catalog1 = catalog1._new_from_slice(imatch1)
     catalog2 = catalog2._new_from_slice(imatch2)
     

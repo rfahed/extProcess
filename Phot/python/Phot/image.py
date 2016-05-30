@@ -11,6 +11,9 @@ from astropy.io import fits
 import numpy as np
 from string import Template
 
+def gauss(x, *p):
+    A, mu, sigma = p
+    return A*np.exp(-(x-mu)**2/(2.*sigma**2))
 
 def sex(imname, zeropoint=0,outputcat=None):
     with open(utils.getAuxPathFile("default.sex.template"),'r') as f :
