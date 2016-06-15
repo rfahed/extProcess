@@ -17,8 +17,8 @@ pix_sim=np.ravel(im_sim[ext].data)
 im_real=fits.open(real_image)
 pix_real=np.ravel(im_real[ext].data)
 
-nbins=1301
-minb=-30
+nbins=120
+minb=20
 bins=np.linspace(minb,minb+nbins-1,nbins)
 n_sim, bins, patches = p.hist(pix_sim, bins=bins, alpha=0.5,label="sim image (band {})".format(filter))
 n_real, bins, patches = p.hist(pix_real, bins=bins, alpha=0.5,label="real image (band {})".format(filter))
@@ -44,10 +44,13 @@ if True :
     gauss_s = image.gauss(bins,*p_s)
     gauss_r = image.gauss(bins,*p_r)
 
-    p.plot(bins, gauss_s, '--',label='sigma = {}'.format(p_s[2]),linewidth=2)
-    p.plot(bins, gauss_r, '--',label='sigma = {}'.format(p_r[2]),linewidth=2)
-
+    p.plot(bins, gauss_s, '--',label='sigma = {:.1f}'.format(p_s[2]),linewidth=2)
+    p.plot(bins, gauss_r, '--',label='sigma = {:.1f}'.format(p_r[2]),linewidth=2)
+    
+    
 p.grid()
 p.legend()
+p.tight_layout()
+p.savefig("pix_histogram_{}.png".format(filter))
 p.show()
 

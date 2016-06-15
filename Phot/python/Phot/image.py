@@ -8,8 +8,64 @@ logger = log.getLogger('image')
 import subprocess, os, sys
 from . import utils
 from astropy.io import fits
+from astropy.wcs import WCS
+from matplotlib.colors import LogNorm
 import numpy as np
 from string import Template
+from matplotlib import pylab as P
+
+def get_wcs(header):
+    KEYS_TO_DEL = ["PV{}_{}".format(i,j) for i in range(11) for j in range(11) ]
+    for k in KEYS_TO_DEL:
+        if k in header :
+            del header[k]
+
+    wcs = WCS(header)
+    return wcs
+    
+def get_footprint(header):
+    wcs = get_wcs(header)
+    footprint = wcs.calc_footprint(header)
+    return footprint
+
+def in_rect(rect,x,y):
+    # Corners in ax,ay,bx,by,dx,dy
+    # Point in x, y
+    ax=rect[0][0]
+    ay=rect[0][1]
+    bx=rect[1][0]
+    by=rect[1][1]
+    dx=rect[3][0]
+    dy=rect[3][1]
+
+    bax = bx - ax
+    bay = by - ay
+    dax = dx - ax
+    day = dy - ay
+
+    if ((x - ax) * bax + (y - ay) * bay < 0.0):
+        return False
+    if ((x - bx) * bax + (y - by) * bay > 0.0):
+        return False
+    if ((x - ax) * dax + (y - ay) * day < 0.0): 
+        return False
+    if ((x - dx) * dax + (y - dy) * day > 0.0): 
+        return False
+
+    return True
+
+def plotfits(imname,ext=1,show=False,**kwargs):
+    hdu = fits.open(imname)[ext]
+    wcs = get_wcs(hdu.header)
+    fig = P.figure()
+    fig.add_subplot(111, projection=wcs)
+    P.imshow(hdu.data, origin='lower', norm=LogNorm(), cmap='gray_r',**kwargs)
+    P.colorbar()
+    P.xlabel('RA')
+    P.ylabel('Dec')
+    if show :
+        P.show()
+   
 
 def gauss(x, *p):
     A, mu, sigma = p

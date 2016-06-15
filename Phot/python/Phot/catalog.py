@@ -10,13 +10,15 @@ from . import utils
 from astropy.coordinates import ICRS, SkyCoord
 from astropy import table
 from astropy import units as u
-from astropy.io import ascii
+from astropy.io import ascii,fits
+from matplotlib.colors import LogNorm
 import numpy as np
 import matplotlib.pyplot as P
 import sys
 
 
 NEWLINE = '\n'
+
 
 
 def mergecats(catalogs=None,delta=1e-4,filters=None,poskeys=['X_WORLD','Y_WORLD'],stack=True,mcats=None):
@@ -38,6 +40,12 @@ def mergecats(catalogs=None,delta=1e-4,filters=None,poskeys=['X_WORLD','Y_WORLD'
             mergedcat=mergecat(mergedcat,catalogs[i], poskeys1=poskeys, poskeys2=poskeys, delta=delta,stack=stack,mcats=mcats)
             
     return mergedcat
+    
+def plot_vignet(cat,i,show=True):
+    P.imshow(cat['VIGNET'][i],cmap='gray_r',interpolation='none')
+    P.colorbar()
+    if show :
+        P.show()
 
 def add_calc_column(catalog,field1,field2,func,outputfield=None):
     if outputfield is None:
@@ -106,7 +114,7 @@ def histogramcol(catalog,field,xlab=None,ylab="Counts",show=False,p=P,**kwargs):
     n, bins, patches = p.hist(np.array(catalog[field]), alpha=0.5,**kwargs)
     p.xlabel(xlab)
     p.ylabel(ylab)
-    p.legend(loc='upper right')
+    p.legend(loc=0)
     p.grid()
     if show:
         p.show()
@@ -119,15 +127,18 @@ def tag_catalog(catalog, tag):
     return catalog
 
 def matchcats(p1,p2,delta=1e-4):
-    index,dist2d,dist3d = p1.match_to_catalog_sky(p2)
-    imatch = np.where(dist2d < delta*u.degree)
-    return (imatch, index[imatch])
+    #index,dist2d,dist3d = p1.match_to_catalog_sky(p2)
+    #imatch = np.where(dist2d < delta*u.degree)
+    imatch2, imatch1, d2d, d3d = p1.search_around_sky(p2, delta*u.deg)
+    #return (imatch, index[imatch])
+    return (imatch1,imatch2,d2d)
 
 def mergecat(catalog1,catalog2, delta=1e-4, poskeys1=['X_WORLD','Y_WORLD'], poskeys2=['X_WORLD','Y_WORLD'], mcats=['cat1_w_matchtags.txt','cat2_w_matchtags.txt'], stack=True):    
     p1=SkyCoord(catalog1[poskeys1[0]],catalog1[poskeys1[1]],frame='icrs',unit="deg")
     p2=SkyCoord(catalog2[poskeys2[0]],catalog2[poskeys2[1]],frame='icrs',unit="deg")
     
-    imatch1, imatch2 = matchcats(p1,p2,delta=delta)
+    imatch1, imatch2, d = matchcats(p1,p2,delta=delta)
+    distance=table.Column(name='DISTANCE',data=d) * 3600.0
     m1=np.zeros(len(catalog1),dtype=int)
     m1[imatch1]=1
     m2=np.zeros(len(catalog2),dtype=int)
@@ -147,12 +158,14 @@ def mergecat(catalog1,catalog2, delta=1e-4, poskeys1=['X_WORLD','Y_WORLD'], posk
     catalog2 = catalog2._new_from_slice(imatch2)
     
     if stack :
-        return table.hstack([catalog1,catalog2])
+        outcat = table.hstack([catalog1,catalog2])
+        outcat.add_column(distance)
+        return outcat
     else :
         return (catalog1,catalog2)
 
 
-def toRegionFile(catalog, filename, symbol = 'ellipse', subtag='',wcs=False):
+def toRegionFile(catalog, filename, symbol = 'ellipse', subtag='',wcs=True):
 #        
 #   Dumps the catalog into a ds9 region file with symbols = "ellipse" or "point".
 #   
@@ -185,9 +198,19 @@ def toRegionFile(catalog, filename, symbol = 'ellipse', subtag='',wcs=False):
                               catalog['Y'+fulltag][i]])
     f.close()
 
+def readfits(catfile):
+    fitscat=fits.open(catfile)
+    data = []
+    for hdu in fitscat[1:] :
+        if hdu.header['EXTNAME'] == 'LDAC_OBJECTS':
+            data.append(hdu.data)
+    return table.Table(np.hstack(data))
+
 def read(catfile,format=None):
-    if format=="ext" :
-	return readext(catfile)
+    if format=="fits":
+        return readfits(catfile)
+    elif format=="ext" :
+	    return readext(catfile)
     else : 
         return ascii.read(catfile,format=format)
 
