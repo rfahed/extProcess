@@ -8,7 +8,7 @@ from __future__ import division
 import argparse
 import ElementsKernel.Logging as log
 from . import catalog,utils
-from astropy.io import ascii
+from astropy.io import ascii, fits
 
 def defineSpecificProgramOptions():
     """
@@ -55,11 +55,11 @@ def mainMethod(args):
         catalogs.append(catalog.read(cat,format=ft))
     
     if len(args.catalogs) == 2:
-        mcats=[utils.rm_extension(c)+'_matchtag.txt' for c in args.catalogs]
+        mcats=[utils.rm_extension(c)+'_matchtag.cat' for c in args.catalogs]
     mergedcat = catalog.mergecats(catalogs,delta=args.tol,filters=args.filters,mcats=mcats)
 
     with open(args.outputcat, 'w') as f :
-        ascii.write(mergedcat, f,Writer=ascii.CommentedHeader)
+        fits.write(mergedcat, f)
         
     logger.info('# Percentage of cat 1 matched : {} %'.format(100*(len(mergedcat)/len(catalogs[0]))))
     logger.info('# Percentage of cat 2 matched : {} %'.format(100*(len(mergedcat)/len(catalogs[1]))))
