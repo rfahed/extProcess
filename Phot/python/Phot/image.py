@@ -78,7 +78,7 @@ def sex(imname, zeropoint=0,outputcat=None):
     with open("default.sex",'w') as f :
 	f.write(conf)
     if outputcat is None :
-    	outputcat = utils.rm_extension(imname)+".txt"
+    	outputcat = utils.rm_extension(imname)+".cat"
 
     cmd = ["sex",imname,"-c","default.sex"]
     cmd += ["-CATALOG_NAME",outputcat]

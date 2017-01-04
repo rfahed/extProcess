@@ -58,8 +58,9 @@ def mainMethod(args):
         mcats=[utils.rm_extension(c)+'_matchtag.cat' for c in args.catalogs]
     mergedcat = catalog.mergecats(catalogs,delta=args.tol,filters=args.filters,mcats=mcats)
 
-    with open(args.outputcat, 'w') as f :
-        fits.write(mergedcat, f)
+    #with open(args.outputcat, 'w') as f :
+    #    fits.write(mergedcat, f)
+    catalog.writefits(mergedcat,args.outputcat)
         
     logger.info('# Percentage of cat 1 matched : {} %'.format(100*(len(mergedcat)/len(catalogs[0]))))
     logger.info('# Percentage of cat 2 matched : {} %'.format(100*(len(mergedcat)/len(catalogs[1]))))

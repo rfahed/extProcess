@@ -26,8 +26,8 @@ def defineSpecificProgramOptions():
     # !!! Write your program options here !!!
     parser.add_argument('--wcs', action='store_true',
                       help='Region file in wcs coordinates',
-                      default=False)
-    parser.add_argument('--catalog', type=str, help='Ascii catalog file.')
+                      default=True)
+    parser.add_argument('--catalog', type=str, help='Catalog file.')
     parser.add_argument('--format',  type=str, help='Format of input catalog')
     parser.add_argument('--symbol',  type=str, help='Symbol to draw')
     parser.add_argument('--xkey',    type=str, help='Keyword for x position')
@@ -59,7 +59,7 @@ def mainMethod(args):
     # !! e.g string_option = args.string_value
 
     #
-    cat = ascii.read(args.catalog,format=args.format)
+    cat = catalog.read(args.catalog,format=args.format)
     regionfile = utils.rm_extension(args.catalog)+'.reg'
     if args.subtag is None :
         args.subtag = ''

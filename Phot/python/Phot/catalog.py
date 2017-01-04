@@ -133,7 +133,7 @@ def matchcats(p1,p2,delta=1e-4):
     #return (imatch, index[imatch])
     return (imatch1,imatch2,d2d)
 
-def mergecat(catalog1,catalog2, delta=1e-4, poskeys1=['X_WORLD','Y_WORLD'], poskeys2=['X_WORLD','Y_WORLD'], mcats=['cat1_w_matchtags.txt','cat2_w_matchtags.txt'], stack=True):    
+def mergecat(catalog1,catalog2, delta=1e-4, poskeys1=['X_WORLD','Y_WORLD'], poskeys2=['X_WORLD','Y_WORLD'], mcats=['cat1_w_matchtags.cat','cat2_w_matchtags.cat'], stack=True):    
     p1=SkyCoord(catalog1[poskeys1[0]],catalog1[poskeys1[1]],frame='icrs',unit="deg")
     p2=SkyCoord(catalog2[poskeys2[0]],catalog2[poskeys2[1]],frame='icrs',unit="deg")
     
@@ -149,10 +149,12 @@ def mergecat(catalog1,catalog2, delta=1e-4, poskeys1=['X_WORLD','Y_WORLD'], posk
     if mcats :
         catalog1.add_column(matched1)
         catalog2.add_column(matched2)
-        with open(mcats[0], 'w') as f :
-            ascii.write(catalog1, f,Writer=ascii.CommentedHeader)
-        with open(mcats[1], 'w') as f :
-            ascii.write(catalog2, f,Writer=ascii.CommentedHeader)
+        #with open(mcats[0], 'w') as f :
+            #ascii.write(catalog1, f,Writer=ascii.CommentedHeader)
+        writefits(catalog1,mcats[0])
+        #with open(mcats[1], 'w') as f :
+            #ascii.write(catalog2, f,Writer=ascii.CommentedHeader)
+        writefits(catalog2,mcats[1])
 
     catalog1 = catalog1._new_from_slice(imatch1)
     catalog2 = catalog2._new_from_slice(imatch2)
@@ -197,6 +199,10 @@ def toRegionFile(catalog, filename, symbol = 'ellipse', subtag='',wcs=True):
                               catalog['X'+fulltag][i],
                               catalog['Y'+fulltag][i]])
     f.close()
+
+def writefits(table,file):
+    fitstable=fits.HDUList([fits.PrimaryHDU(),fits.BinTableHDU.from_columns(table.as_array())])
+    fitstable.writeto(file,clobber=True)
 
 def readfits(catfile):
     fitscat=fits.open(catfile)
