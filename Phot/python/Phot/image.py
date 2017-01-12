@@ -65,7 +65,7 @@ def plotfits(imname,ext=1,show=False,**kwargs):
     P.ylabel('Dec')
     if show :
         P.show()
-   
+    return wcs
 
 def gauss(x, *p):
     A, mu, sigma = p

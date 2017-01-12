@@ -204,10 +204,14 @@ def writefits(table,file):
     fitstable=fits.HDUList([fits.PrimaryHDU(),fits.BinTableHDU.from_columns(table.as_array())])
     fitstable.writeto(file,clobber=True)
 
-def readfits(catfile):
+def readfits(catfile, imgext=None):
     fitscat=fits.open(catfile)
     data = []
-    for hdu in fitscat[1:] :
+    if imgext is None:
+        ext = slice(1, None)
+    else:
+        ext = slice(2*imgext, 2*imgext + 1)
+    for hdu in fitscat[ext] :
         if hdu.header['EXTNAME'] == 'LDAC_OBJECTS':
             data.append(hdu.data)
     return table.Table(np.hstack(data))
