@@ -18,8 +18,11 @@ import sys
 
 
 NEWLINE = '\n'
+MAG_ZEROPOINT = 30.5862157412
 
-
+## Extension number of output catalog corresponds to CCD number
+list_ext_num = [1, 2, 3, 4, 17, 18, 19, 20, 5, 6, 7, 8, 21, 22, 23, 24, 9, 10, 11,
+            12, 25, 26, 27, 28, 13, 14, 15, 16, 29, 30, 31, 32]
 
 def mergecats(catalogs=None,delta=1e-4,filters=None,poskeys=['X_WORLD','Y_WORLD'],stack=True,mcats=None):
     ncat = len(catalogs)
@@ -81,9 +84,9 @@ def plotcols(catalog,field1,field2,title=None,xlab=None,ylab=None,show=False,p=P
     p.plot(catalog[field1],catalog[field2],**kwargs)
     p.title(title)
     if xlab is None :
-	xlab = field1
+        xlab = field1
     if ylab is None :
-	ylab = field2
+        ylab = field2
     p.xlabel(xlab)
     p.ylabel(ylab)
     p.grid()
@@ -93,11 +96,11 @@ def plotcols(catalog,field1,field2,title=None,xlab=None,ylab=None,show=False,p=P
 def scattercols(catalog,field1,field2,title=None,xlab=None,ylab=None,log=False,show=False,p=P,**kwargs):    
     p.scatter(catalog[field1],catalog[field2],marker='+',**kwargs)
     if title :    
-	    p.title(title)
+        p.title(title)
     if xlab is None :
-	    xlab = field1
+        xlab = field1
     if ylab is None :
-	    ylab = field2
+        ylab = field2
     if log:
         ax=p.gca()
         ax.set_yscale('log')
@@ -110,7 +113,7 @@ def scattercols(catalog,field1,field2,title=None,xlab=None,ylab=None,log=False,s
     
 def histogramcol(catalog,field,xlab=None,ylab="Counts",show=False,p=P,**kwargs):
     if xlab is None :
-	xlab = field
+        xlab = field
     n, bins, patches = p.hist(np.array(catalog[field]), alpha=0.5,**kwargs)
     p.xlabel(xlab)
     p.ylabel(ylab)
@@ -220,7 +223,7 @@ def read(catfile,format=None):
     if format=="fits":
         return readfits(catfile)
     elif format=="ext" :
-	    return readext(catfile)
+        return readext(catfile)
     else : 
         return ascii.read(catfile,format=format)
 
@@ -250,6 +253,38 @@ def process_line(x,ncols):
     
     return ' '.join(splitx)
     
+
+def mag_zeropoint_ccd(zp_mag_ccd, list_ext_num, idx_ext):
+    '''Returns zero point magnitude of ccd corresponding to index of extension
+    of fits catalog
+    - Parameters:
+        + zp_mag_ccd: array of zeropoint magnitude of all CCD
+        + list_ext_num: list of extension number already in order by KIDS CCD
+        + idx_ext: the extension number: 1st, 2nd, ...
+    '''
+    mag_zeropoint = zp_mag_ccd[list_ext_num.index(idx_ext)]
+    return mag_zeropoint
+
+
+def correct_mag_ccd(catalog, zp_mag_ccd, list_ext_num, idx_ext):
+    '''Correct the magnitude by the zero point magnitude of CCD
+    - Default magnitude: mag = -2.5*log10(flux) + MAG_ZEROPOINT
+    - Corrected magnitude: mag_corr = mag - MAG_ZEROPOINT + MAG_ZEROPOINT_CCD
+    Parameters:
+        - catalog: input fits catalog
+        - zp_mag_ccd: zero point magnitude of all ccd
+        - list_ext_num: list of extension numbers corresponds to the CCD number
+        - idx_ext: index of extension of catalog to correct magnitude
+    Returns:
+        - array of corrected magnitude
+    '''
+    cat_data = catalog[2*idx_ext].data
+    mag = cat_data['MAG_AUTO']
+
+    MAG_ZEROPOINT_CCD = mag_zeropoint_ccd(zp_mag_ccd, list_ext_num, idx_ext)
+    mag_corr = mag - MAG_ZEROPOINT + MAG_ZEROPOINT_CCD
+    return mag_corr
+
 
 class Writer :
     def __init__(self, f):
