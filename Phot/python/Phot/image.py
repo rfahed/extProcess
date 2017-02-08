@@ -13,12 +13,13 @@ from matplotlib.colors import LogNorm
 import numpy as np
 from string import Template
 from matplotlib import pylab as P
+import json
 
 def get_wcs(header):
-    KEYS_TO_DEL = ["PV{}_{}".format(i,j) for i in range(11) for j in range(11) ]
-    for k in KEYS_TO_DEL:
-        if k in header :
-            del header[k]
+    #KEYS_TO_DEL = ["PV{}_{}".format(i,j) for i in range(11) for j in range(11) ]
+    #for k in KEYS_TO_DEL:
+    #    if k in header :
+    #        del header[k]
 
     wcs = WCS(header)
     return wcs
@@ -63,13 +64,35 @@ def plotfits(imname,ext=1,show=False,**kwargs):
     P.colorbar()
     P.xlabel('RA')
     P.ylabel('Dec')
+
+    return wcs
+
+def plotcat(cat,wcs,show=False,poskeys=['X_WORLD','Y_WORLD'],**kwargs):
+    objects_pos=wcs.all_world2pix(cat[poskeys[0]], cat[poskeys[1]], 0)
+    P.scatter(objects_pos[0],objects_pos[1],**kwargs)
     if show :
         P.show()
-    return wcs
+    return objects_pos
 
 def gauss(x, *p):
     A, mu, sigma = p
     return A*np.exp(-(x-mu)**2/(2.*sigma**2))
+
+def smag2pix(smag,pixscale,zp,exptime=1.):
+    pixvalue=exptime*10.**((zp-smag)/2.5)*pixscale**2
+    return pixvalue
+
+def read_instrument(instrument_file):
+    with open(instrument_file) as f :
+        instrument = json.load(f)
+    instrument["CCDS_LAYOUT"] = {int(k):v for (k,v) in instrument["CCDS_LAYOUT"].items()}
+    return instrument
+
+def updatewcs(im,instrument):
+    for i,ext in enumerate(im[1:],1):
+        wcs=instrument['CCDS_LAYOUT'][i]["WCS"]
+        for k,v in wcs.items():
+            ext.header[k]=v
 
 def sex(imname, zeropoint=0,outputcat=None):
     with open(utils.getAuxPathFile("default.sex.template"),'r') as f :

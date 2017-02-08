@@ -57,6 +57,7 @@ elements_depends_on_subdirs(ElementsKernel)
 elements_add_python_program(sextractor Phot.sextractor)
 elements_add_python_program(mergecatalogs Phot.mergecatalogs)
 elements_add_python_program(makeregionfile Phot.makeregionfile)
+elements_add_python_program(truewcs Phot.truewcs)
 
 #===============================================================================
 # Use the following macro for python modules, scripts and aux files:
@@ -64,6 +65,7 @@ elements_add_python_program(makeregionfile Phot.makeregionfile)
 #  elements_install_scripts()
 #===============================================================================
 #elements_install_scripts()
+elements_install_scripts()
 elements_install_python_modules()
 
 #===============================================================================
