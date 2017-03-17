@@ -254,19 +254,7 @@ def process_line(x,ncols):
     return ' '.join(splitx)
     
 
-def mag_zeropoint_ccd(zp_mag_ccd, list_ext_num, idx_ext):
-    '''Returns zero point magnitude of ccd corresponding to index of extension
-    of fits catalog
-    - Parameters:
-        + zp_mag_ccd: array of zeropoint magnitude of all CCD
-        + list_ext_num: list of extension number already in order by KIDS CCD
-        + idx_ext: the extension number: 1st, 2nd, ...
-    '''
-    mag_zeropoint = zp_mag_ccd[list_ext_num.index(idx_ext)]
-    return mag_zeropoint
-
-
-def correct_mag_ccd(catalog, zp_mag_ccd, list_ext_num, idx_ext):
+def correct_mag_ccd(catalog, idx_ext, t_exp):
     '''Correct the magnitude by the zero point magnitude of CCD
     - Default magnitude: mag = -2.5*log10(flux) + MAG_ZEROPOINT
     - Corrected magnitude: mag_corr = mag - MAG_ZEROPOINT + MAG_ZEROPOINT_CCD
@@ -275,15 +263,75 @@ def correct_mag_ccd(catalog, zp_mag_ccd, list_ext_num, idx_ext):
         - zp_mag_ccd: zero point magnitude of all ccd
         - list_ext_num: list of extension numbers corresponds to the CCD number
         - idx_ext: index of extension of catalog to correct magnitude
+        - t_exp: exposure time of filter (telescope)
     Returns:
         - array of corrected magnitude
     '''
+    cat_header = catalog[2*idx_ext-1].data
     cat_data = catalog[2*idx_ext].data
     mag = cat_data['MAG_AUTO']
-
-    MAG_ZEROPOINT_CCD = mag_zeropoint_ccd(zp_mag_ccd, list_ext_num, idx_ext)
-    mag_corr = mag - MAG_ZEROPOINT + MAG_ZEROPOINT_CCD
+    ## Get value of SIMMAGZP in header of output catalog
+    for i in xrange(55, 65):
+        if fits.Card.fromstring(cat_header[0][0][i])[0] == 'SIMMAGZP':
+            MAG_ZEROPOINT_CCD = fits.Card.fromstring(cat_header[0][0][i])[1] 
+    mag_corr = mag + 2.5*np.log10(t_exp) + MAG_ZEROPOINT_CCD
     return mag_corr
+
+def cn_PnPoly(P, V):
+    cn = 0    # the crossing number counter
+
+    # repeat the first vertex at end
+    V = tuple(V[:])+(V[0],)
+
+    # loop through all edges of the polygon
+    for i in range(len(V)-1):   # edge from V[i] to V[i+1]
+        if ((V[i][1] <= P[1] and V[i+1][1] > P[1])   # an upward crossing
+            or (V[i][1] > P[1] and V[i+1][1] <= P[1])):  # a downward crossing
+            # compute the actual edge-ray intersect x-coordinate
+            vt = (P[1] - V[i][1]) / float(V[i+1][1] - V[i][1])
+            if P[0] < V[i][0] + vt * (V[i+1][0] - V[i][0]): # P[0] < intersect
+                cn += 1  # a valid crossing of y=P[1] right of P[0]
+
+    return cn % 2   # 0 if even (out), and 1 if odd (in)
+
+def inside_footprint(catalog, footprint, pos_keys=['X_WORLD', 'Y_WORLD']):
+    x = catalog[pos_keys[0]]
+    y = catalog[pos_keys[1]]
+    in_out = [cn_PnPoly([x[i], y[i]], footprint) for i in range(len(catalog))]
+    return catalog[np.asarray(in_out, dtype=bool)]
+
+
+def object_inside_footprint(outside_cat, inside_cat,
+    pos_out=['X_WORLD', 'Y_WORLD'], pos_in=['X_WORLD', 'Y_WORLD']):
+
+    x_min_out = min(inside_cat[pos_in[0]])
+    x_max_out = max(inside_cat[pos_in[0]])
+    y_min_out = min(inside_cat[pos_in[1]])
+    y_max_out = max(inside_cat[pos_in[1]])
+    select1 = (outside_cat[pos_out[0]] <= x_max_out) & (outside_cat[pos_out[0]] >= x_min_out)
+    select2 = (outside_cat[pos_out[1]] <= y_max_out) & (outside_cat[pos_out[1]] >= y_min_out)
+    return outside_cat[[select1&select2]]
+
+def modify_position(cat, wcs, type_pos='PIXEL'):
+    x, y = wcs.all_world2pix(cat['X_WORLD'], cat['Y_WORLD'], 0)
+    if type_pos == 'WORLD':
+        x, y = wcs.all_pix2world(cat['X_IMAGE'], cat['Y_IMAGE'], 0)
+    return x, y
+
+
+def match_catalogs(cat1, cat2, sep=0.0001, poskeys1=['X_WORLD','Y_WORLD'],
+    poskeys2=['X_WORLD','Y_WORLD']):
+    '''Find objects appear in both catalogs
+    Parameters
+        - cat1, cat2: two catalogs to match
+        - sep: The on-sky separation to search within. unit: degree
+        - poskeys1, poskeys2: position keywords of two catalogs.
+    Return index of match objects in both catalogs
+    '''
+    c1 = SkyCoord(ra=cat1[poskeys1[0]], dec=cat1[poskeys1[1]], unit="deg")
+    c2 = SkyCoord(ra=cat2[poskeys2[0]], dec=cat2[poskeys2[1]], unit="deg")
+    idxc1, idxc2, d2d, d3d = c2.search_around_sky(c1, sep*u.deg)
+    return idxc1, idxc2, d2d
 
 
 class Writer :
