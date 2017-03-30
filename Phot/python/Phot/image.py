@@ -114,17 +114,16 @@ def sex(imname, zeropoint=0,outputcat=None):
     if p!=0 :
         sys.exit("SExtractor failed... Exiting.")
 
-def get_zeropoint(imname,apply_exptime=False,zerokey="MAGZERO"):
+def get_zeropoints(imname,apply_exptime=False,zerokey="MAGZERO"):
     im = fits.open(imname)
-    try :
-	zeropoint = im[0].header[zerokey]
-    except :
-	zeropoint = im[1].header[zerokey]
+    zeropoints=[]
+    for ext in im[1:]:
+        z=ext.header[zerokey]
+        if apply_exptime :
+    	    z += 2.5*np.log10(im[0].header['EXPTIME'])
+	    zeropoints.append(z)
 
-    if apply_exptime :
-	zeropoint += 2.5*np.log10(im[0].header['EXPTIME'])
-
-    logger.info("Mag zeropoint : {}".format(zeropoint))
-    return zeropoint
+    logger.info("Mag zeropoints : {}".format(zeropoints))
+    return zeropoints
 
 

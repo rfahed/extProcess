@@ -13,16 +13,12 @@ from astropy import units as u
 from astropy.io import ascii,fits
 from matplotlib.colors import LogNorm
 import numpy as np
+from scipy.spatial import distance
 import matplotlib.pyplot as P
 import sys
 
 
 NEWLINE = '\n'
-MAG_ZEROPOINT = 30.5862157412
-
-## Extension number of output catalog corresponds to CCD number
-list_ext_num = [1, 2, 3, 4, 17, 18, 19, 20, 5, 6, 7, 8, 21, 22, 23, 24, 9, 10, 11,
-            12, 25, 26, 27, 28, 13, 14, 15, 16, 29, 30, 31, 32]
 
 def mergecats(catalogs=None,delta=1e-4,filters=None,poskeys=['X_WORLD','Y_WORLD'],stack=True,mcats=None):
     ncat = len(catalogs)
@@ -44,9 +40,9 @@ def mergecats(catalogs=None,delta=1e-4,filters=None,poskeys=['X_WORLD','Y_WORLD'
             
     return mergedcat
     
-def plot_vignet(cat,i,show=True):
-    P.imshow(cat['VIGNET'][i],cmap='gray_r',interpolation='none')
-    P.colorbar()
+def plot_vignet(cat,i,show=True,p=P):
+    p.imshow(cat['VIGNET'][i],cmap='gray_r',interpolation='none')
+    p.colorbar()
     if show :
         P.show()
 
@@ -92,8 +88,18 @@ def plotcols(catalog,field1,field2,title=None,xlab=None,ylab=None,show=False,p=P
     p.grid()
     if show:
         p.show()
+
         
-def scattercols(catalog,field1,field2,title=None,xlab=None,ylab=None,log=False,show=False,p=P,**kwargs):    
+def scattercols(catalog,field1,field2,title=None,xlab=None,ylab=None,log=False,show=False,p=P,**kwargs):
+    def onclick(event):
+        print((event.xdata,event.ydata))
+        d=distance.cdist([[event.xdata,event.ydata]], catalog[field1,field2].__array__().transpose().tolist())
+        i = d.argmin()
+        p.scatter(catalog[field1][i],catalog[field1][i],marker='*')
+        pvignet=p.figure()
+        plot_vignet(catalog,i,show=True)
+        
+        
     p.scatter(catalog[field1],catalog[field2],marker='+',**kwargs)
     if title :    
         p.title(title)
@@ -104,10 +110,14 @@ def scattercols(catalog,field1,field2,title=None,xlab=None,ylab=None,log=False,s
     if log:
         ax=p.gca()
         ax.set_yscale('log')
-
+    
     p.xlabel(xlab)
     p.ylabel(ylab)
     p.grid()
+    
+    fig=p.gcf()
+    fig.canvas.mpl_connect('button_press_event', onclick)
+    
     if show:
         p.show()
     
@@ -205,7 +215,7 @@ def toRegionFile(catalog, filename, symbol = 'ellipse', subtag='',wcs=True):
 
 def writefits(table,file):
     fitstable=fits.HDUList([fits.PrimaryHDU(),fits.BinTableHDU.from_columns(table.as_array())])
-    fitstable.writeto(file,clobber=True)
+    fitstable.writeto(file,overwrite=True)
 
 def readfits(catfile, imgext=None):
     fitscat=fits.open(catfile)
@@ -215,7 +225,7 @@ def readfits(catfile, imgext=None):
     else:
         ext = slice(2*imgext, 2*imgext + 1)
     for hdu in fitscat[ext] :
-        if hdu.header['EXTNAME'] == 'LDAC_OBJECTS':
+        if hdu.header['TFIELDS'] > 1:
             data.append(hdu.data)
     return table.Table(np.hstack(data))
 
@@ -252,38 +262,13 @@ def process_line(x,ncols):
         splitx += ['0']*deltacol
     
     return ' '.join(splitx)
-    
-
-def mag_zeropoint_ccd(zp_mag_ccd, list_ext_num, idx_ext):
-    '''Returns zero point magnitude of ccd corresponding to index of extension
-    of fits catalog
-    - Parameters:
-        + zp_mag_ccd: array of zeropoint magnitude of all CCD
-        + list_ext_num: list of extension number already in order by KIDS CCD
-        + idx_ext: the extension number: 1st, 2nd, ...
-    '''
-    mag_zeropoint = zp_mag_ccd[list_ext_num.index(idx_ext)]
-    return mag_zeropoint
 
 
-def correct_mag_ccd(catalog, zp_mag_ccd, list_ext_num, idx_ext):
-    '''Correct the magnitude by the zero point magnitude of CCD
-    - Default magnitude: mag = -2.5*log10(flux) + MAG_ZEROPOINT
-    - Corrected magnitude: mag_corr = mag - MAG_ZEROPOINT + MAG_ZEROPOINT_CCD
-    Parameters:
-        - catalog: input fits catalog
-        - zp_mag_ccd: zero point magnitude of all ccd
-        - list_ext_num: list of extension numbers corresponds to the CCD number
-        - idx_ext: index of extension of catalog to correct magnitude
-    Returns:
-        - array of corrected magnitude
-    '''
-    cat_data = catalog[2*idx_ext].data
-    mag = cat_data['MAG_AUTO']
-
-    MAG_ZEROPOINT_CCD = mag_zeropoint_ccd(zp_mag_ccd, list_ext_num, idx_ext)
-    mag_corr = mag - MAG_ZEROPOINT + MAG_ZEROPOINT_CCD
-    return mag_corr
+def apply_zeropoints(catalog, zeropoints):
+    cat = fits.open(catalog,mode='update')
+    for hdu,zp in zip(cat[2::2],zeropoints):
+        hdu.data['MAG_AUTO']+=zp
+    cat.flush()
 
 
 class Writer :
