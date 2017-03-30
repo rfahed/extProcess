@@ -7,7 +7,7 @@
 import argparse
 import ElementsKernel.Logging as log
 from . import utils
-from . import image
+from . import image, catalog
 
 def defineSpecificProgramOptions():
     """
@@ -53,11 +53,16 @@ def mainMethod(args):
     logger.info('#')
     
     if args.zeropoint == "PER_S":
-        zeropoint = image.get_zeropoint(args.image,apply_exptime=True,zerokey=args.zerokey)
+        zeropoints = image.get_zeropoints(args.image,apply_exptime=True,zerokey=args.zerokey)
     elif args.zeropoint == "INTEGRATED":
-        zeropoint = image.get_zeropoint(args.image,apply_exptime=False,zerokey=args.zerokey)
+        zeropoints = image.get_zeropoints(args.image,apply_exptime=False,zerokey=args.zerokey)
     
-    image.sex(args.image,zeropoint,outputcat=args.outputcat)
+    if args.outputcat == None :
+        args.outputcat=utils.rm_extension(args.image)+".cat"
+    
+    image.sex(args.image,outputcat=args.outputcat)
+    
+    catalog.apply_zeropoints(args.outputcat,zeropoints)
     
     # !! Getting the option from the example option in defineSpecificProgramOption 
     # !! e.g string_option = args.string_value

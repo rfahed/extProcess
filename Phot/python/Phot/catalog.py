@@ -13,16 +13,12 @@ from astropy import units as u
 from astropy.io import ascii,fits
 from matplotlib.colors import LogNorm
 import numpy as np
+from scipy.spatial import distance
 import matplotlib.pyplot as P
 import sys
 
 
 NEWLINE = '\n'
-MAG_ZEROPOINT = 30.5862157412
-
-## Extension number of output catalog corresponds to CCD number
-list_ext_num = [1, 2, 3, 4, 17, 18, 19, 20, 5, 6, 7, 8, 21, 22, 23, 24, 9, 10, 11,
-            12, 25, 26, 27, 28, 13, 14, 15, 16, 29, 30, 31, 32]
 
 def mergecats(catalogs=None,delta=1e-4,filters=None,poskeys=['X_WORLD','Y_WORLD'],stack=True,mcats=None):
     ncat = len(catalogs)
@@ -44,9 +40,9 @@ def mergecats(catalogs=None,delta=1e-4,filters=None,poskeys=['X_WORLD','Y_WORLD'
             
     return mergedcat
     
-def plot_vignet(cat,i,show=True):
-    P.imshow(cat['VIGNET'][i],cmap='gray_r',interpolation='none')
-    P.colorbar()
+def plot_vignet(cat,i,show=True,p=P):
+    p.imshow(cat['VIGNET'][i],cmap='gray_r',interpolation='none')
+    p.colorbar()
     if show :
         P.show()
 
@@ -92,8 +88,18 @@ def plotcols(catalog,field1,field2,title=None,xlab=None,ylab=None,show=False,p=P
     p.grid()
     if show:
         p.show()
+
         
-def scattercols(catalog,field1,field2,title=None,xlab=None,ylab=None,log=False,show=False,p=P,**kwargs):    
+def scattercols(catalog,field1,field2,title=None,xlab=None,ylab=None,log=False,show=False,p=P,**kwargs):
+    def onclick(event):
+        print((event.xdata,event.ydata))
+        d=distance.cdist([[event.xdata,event.ydata]], catalog[field1,field2].__array__().transpose().tolist())
+        i = d.argmin()
+        p.scatter(catalog[field1][i],catalog[field1][i],marker='*')
+        pvignet=p.figure()
+        plot_vignet(catalog,i,show=True)
+        
+        
     p.scatter(catalog[field1],catalog[field2],marker='+',**kwargs)
     if title :    
         p.title(title)
@@ -104,10 +110,14 @@ def scattercols(catalog,field1,field2,title=None,xlab=None,ylab=None,log=False,s
     if log:
         ax=p.gca()
         ax.set_yscale('log')
-
+    
     p.xlabel(xlab)
     p.ylabel(ylab)
     p.grid()
+    
+    fig=p.gcf()
+    fig.canvas.mpl_connect('button_press_event', onclick)
+    
     if show:
         p.show()
     
@@ -205,7 +215,7 @@ def toRegionFile(catalog, filename, symbol = 'ellipse', subtag='',wcs=True):
 
 def writefits(table,file):
     fitstable=fits.HDUList([fits.PrimaryHDU(),fits.BinTableHDU.from_columns(table.as_array())])
-    fitstable.writeto(file,clobber=True)
+    fitstable.writeto(file,overwrite=True)
 
 def readfits(catfile, imgext=None):
     fitscat=fits.open(catfile)
@@ -215,7 +225,7 @@ def readfits(catfile, imgext=None):
     else:
         ext = slice(2*imgext, 2*imgext + 1)
     for hdu in fitscat[ext] :
-        if hdu.header['EXTNAME'] == 'LDAC_OBJECTS':
+        if hdu.header['TFIELDS'] > 1:
             data.append(hdu.data)
     return table.Table(np.hstack(data))
 
@@ -252,86 +262,13 @@ def process_line(x,ncols):
         splitx += ['0']*deltacol
     
     return ' '.join(splitx)
-    
-
-def correct_mag_ccd(catalog, idx_ext, t_exp):
-    '''Correct the magnitude by the zero point magnitude of CCD
-    - Default magnitude: mag = -2.5*log10(flux) + MAG_ZEROPOINT
-    - Corrected magnitude: mag_corr = mag - MAG_ZEROPOINT + MAG_ZEROPOINT_CCD
-    Parameters:
-        - catalog: input fits catalog
-        - zp_mag_ccd: zero point magnitude of all ccd
-        - list_ext_num: list of extension numbers corresponds to the CCD number
-        - idx_ext: index of extension of catalog to correct magnitude
-        - t_exp: exposure time of filter (telescope)
-    Returns:
-        - array of corrected magnitude
-    '''
-    cat_header = catalog[2*idx_ext-1].data
-    cat_data = catalog[2*idx_ext].data
-    mag = cat_data['MAG_AUTO']
-    ## Get value of SIMMAGZP in header of output catalog
-    for i in xrange(55, 65):
-        if fits.Card.fromstring(cat_header[0][0][i])[0] == 'SIMMAGZP':
-            MAG_ZEROPOINT_CCD = fits.Card.fromstring(cat_header[0][0][i])[1] 
-    mag_corr = mag + 2.5*np.log10(t_exp) + MAG_ZEROPOINT_CCD
-    return mag_corr
-
-def cn_PnPoly(P, V):
-    cn = 0    # the crossing number counter
-
-    # repeat the first vertex at end
-    V = tuple(V[:])+(V[0],)
-
-    # loop through all edges of the polygon
-    for i in range(len(V)-1):   # edge from V[i] to V[i+1]
-        if ((V[i][1] <= P[1] and V[i+1][1] > P[1])   # an upward crossing
-            or (V[i][1] > P[1] and V[i+1][1] <= P[1])):  # a downward crossing
-            # compute the actual edge-ray intersect x-coordinate
-            vt = (P[1] - V[i][1]) / float(V[i+1][1] - V[i][1])
-            if P[0] < V[i][0] + vt * (V[i+1][0] - V[i][0]): # P[0] < intersect
-                cn += 1  # a valid crossing of y=P[1] right of P[0]
-
-    return cn % 2   # 0 if even (out), and 1 if odd (in)
-
-def inside_footprint(catalog, footprint, pos_keys=['X_WORLD', 'Y_WORLD']):
-    x = catalog[pos_keys[0]]
-    y = catalog[pos_keys[1]]
-    in_out = [cn_PnPoly([x[i], y[i]], footprint) for i in range(len(catalog))]
-    return catalog[np.asarray(in_out, dtype=bool)]
 
 
-def object_inside_footprint(outside_cat, inside_cat,
-    pos_out=['X_WORLD', 'Y_WORLD'], pos_in=['X_WORLD', 'Y_WORLD']):
-
-    x_min_out = min(inside_cat[pos_in[0]])
-    x_max_out = max(inside_cat[pos_in[0]])
-    y_min_out = min(inside_cat[pos_in[1]])
-    y_max_out = max(inside_cat[pos_in[1]])
-    select1 = (outside_cat[pos_out[0]] <= x_max_out) & (outside_cat[pos_out[0]] >= x_min_out)
-    select2 = (outside_cat[pos_out[1]] <= y_max_out) & (outside_cat[pos_out[1]] >= y_min_out)
-    return outside_cat[[select1&select2]]
-
-def modify_position(cat, wcs, type_pos='PIXEL'):
-    x, y = wcs.all_world2pix(cat['X_WORLD'], cat['Y_WORLD'], 0)
-    if type_pos == 'WORLD':
-        x, y = wcs.all_pix2world(cat['X_IMAGE'], cat['Y_IMAGE'], 0)
-    return x, y
-
-
-def match_catalogs(cat1, cat2, sep=0.0001, poskeys1=['X_WORLD','Y_WORLD'],
-    poskeys2=['X_WORLD','Y_WORLD']):
-    '''Find objects appear in both catalogs
-    Parameters
-        - cat1, cat2: two catalogs to match
-        - sep: The on-sky separation to search within. unit: degree
-        - poskeys1, poskeys2: position keywords of two catalogs.
-    Return index of match objects in both catalogs
-    '''
-    c1 = SkyCoord(ra=cat1[poskeys1[0]], dec=cat1[poskeys1[1]], unit="deg")
-    c2 = SkyCoord(ra=cat2[poskeys2[0]], dec=cat2[poskeys2[1]], unit="deg")
-    idxc1, idxc2, d2d, d3d = c2.search_around_sky(c1, sep*u.deg)
-    return idxc1, idxc2, d2d
+def apply_zeropoints(catalog, zeropoints):
+    cat = fits.open(catalog,mode='update')
+    for hdu,zp in zip(cat[2::2],zeropoints):
+        hdu.data['MAG_AUTO']+=zp
+    cat.flush()
 
 
 class Writer :
