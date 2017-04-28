@@ -30,7 +30,7 @@ def mergecats(catalogs=None,delta=1e-4,filters=None,poskeys=['X_WORLD','Y_WORLD'
         for i in range(ncat) :
             catalogs[i] = tag_catalog(catalogs[i], filters[i])
             _poskeys.append([x+'_'+filters[i] for x in poskeys])
-      
+
     mergedcat = catalogs[0]
 
     for i in range(1,ncat):
@@ -38,9 +38,9 @@ def mergecats(catalogs=None,delta=1e-4,filters=None,poskeys=['X_WORLD','Y_WORLD'
             mergedcat=mergecat(mergedcat,catalogs[i],poskeys1=_poskeys[0],poskeys2=_poskeys[i],delta=delta,stack=stack,mcats=mcats)
         else :
             mergedcat=mergecat(mergedcat,catalogs[i], poskeys1=poskeys, poskeys2=poskeys, delta=delta,stack=stack,mcats=mcats)
-            
+
     return mergedcat
-    
+
 def plot_vignet(cat,i,show=True,p=P):
     p.imshow(cat['VIGNET'][i],cmap='gray_r',interpolation='none')
     p.colorbar()
@@ -77,7 +77,7 @@ def add_prod_column(catalog,field1,field2,outputfield=None):
     diff = table.Column(name=outputfield,data=catalog[field1]*catalog[field2])
     catalog.add_column(diff)
 
-def plotcols(catalog,field1,field2,title=None,xlab=None,ylab=None,show=False,p=P,**kwargs):      
+def plotcols(catalog,field1,field2,title=None,xlab=None,ylab=None,show=False,p=P,**kwargs):
     p.plot(catalog[field1],catalog[field2],**kwargs)
     p.title(title)
     if xlab is None :
@@ -90,7 +90,7 @@ def plotcols(catalog,field1,field2,title=None,xlab=None,ylab=None,show=False,p=P
     if show:
         p.show()
 
-        
+
 def scattercols(catalog,field1,field2,title=None,xlab=None,ylab=None,log=False,show=False,p=P,**kwargs):
     def onclick(event):
         print((event.xdata,event.ydata))
@@ -99,10 +99,10 @@ def scattercols(catalog,field1,field2,title=None,xlab=None,ylab=None,log=False,s
         p.scatter(catalog[field1][i],catalog[field1][i],marker='*')
         pvignet=p.figure()
         plot_vignet(catalog,i,show=True)
-        
-        
+
+
     p.scatter(catalog[field1],catalog[field2],marker='+',**kwargs)
-    if title :    
+    if title :
         p.title(title)
     if xlab is None :
         xlab = field1
@@ -111,23 +111,23 @@ def scattercols(catalog,field1,field2,title=None,xlab=None,ylab=None,log=False,s
     if log:
         ax=p.gca()
         ax.set_yscale('log')
-    
+
     p.xlabel(xlab)
     p.ylabel(ylab)
     p.grid()
-    
+
     fig=p.gcf()
     fig.canvas.mpl_connect('button_press_event', onclick)
-    
+
     if show:
         p.show()
-    
-    
+
+
 def histogramcol(catalog,fieldx,fieldy,xlab=None,ylab="Counts",show=False,p=P,statistic="count",**kwargs):
     if xlab is None :
-        xlab = fieldx   
+        xlab = fieldx
     y, bins, ibins = stats.binned_statistic(np.array(catalog[fieldx]),np.array(catalog[fieldy]), statistic=statistic,**kwargs)
-    
+
     binw = (bins[1] - bins[0])
     binx = bins[1:] - binw/2
     p.bar(binx, y, width=binw, facecolor='r', edgecolor='k')
@@ -138,7 +138,7 @@ def histogramcol(catalog,fieldx,fieldy,xlab=None,ylab="Counts",show=False,p=P,st
     if show:
         p.show()
 
-    return y, bins 
+    return y, bins
 
 def tag_catalog(catalog, tag):
     for cname in catalog.colnames :
@@ -152,10 +152,10 @@ def matchcats(p1,p2,delta=1e-4):
     #return (imatch, index[imatch])
     return (imatch1,imatch2,d2d)
 
-def mergecat(catalog1,catalog2, delta=1e-4, poskeys1=['X_WORLD','Y_WORLD'], poskeys2=['X_WORLD','Y_WORLD'], mcats=['cat1_w_matchtags.cat','cat2_w_matchtags.cat'], stack=True):    
+def mergecat(catalog1,catalog2, delta=1e-4, poskeys1=['X_WORLD','Y_WORLD'], poskeys2=['X_WORLD','Y_WORLD'], mcats=['cat1_w_matchtags.cat','cat2_w_matchtags.cat'], stack=True):
     p1=SkyCoord(catalog1[poskeys1[0]],catalog1[poskeys1[1]],frame='icrs',unit="deg")
     p2=SkyCoord(catalog2[poskeys2[0]],catalog2[poskeys2[1]],frame='icrs',unit="deg")
-    
+
     imatch1, imatch2, d = matchcats(p1,p2,delta=delta)
     distance=table.Column(name='DISTANCE',data=d) * 3600.0
     m1=np.zeros(len(catalog1),dtype=int)
@@ -177,7 +177,7 @@ def mergecat(catalog1,catalog2, delta=1e-4, poskeys1=['X_WORLD','Y_WORLD'], posk
 
     catalog1 = catalog1._new_from_slice(imatch1)
     catalog2 = catalog2._new_from_slice(imatch2)
-    
+
     if stack :
         outcat = table.hstack([catalog1,catalog2])
         outcat.add_column(distance)
@@ -187,11 +187,11 @@ def mergecat(catalog1,catalog2, delta=1e-4, poskeys1=['X_WORLD','Y_WORLD'], posk
 
 
 def toRegionFile(catalog, filename, symbol = 'ellipse', subtag='',wcs=True):
-#        
+#
 #   Dumps the catalog into a ds9 region file with symbols = "ellipse" or "point".
-#   
+#
     if subtag :
-        subtag = '_'+subtag    
+        subtag = '_'+subtag
     f = open(filename,'w')
     writer = Writer(f)
     if wcs :
@@ -201,9 +201,9 @@ def toRegionFile(catalog, filename, symbol = 'ellipse', subtag='',wcs=True):
         coordtag='_IMAGE'
         #coordid='image;'
         coordid='image;'
-        
+
     fulltag = coordtag+subtag
-    
+
     if symbol=="ellipse" :
         for i in xrange(0,len(catalog)) :
             writer.write_row([coordid, 'ellipse',
@@ -240,7 +240,7 @@ def read(catfile,format=None):
         return readfits(catfile)
     elif format=="ext" :
         return readext(catfile)
-    else : 
+    else :
         return ascii.read(catfile,format=format)
 
 def readext(catfile):
@@ -253,20 +253,20 @@ def readext(catfile):
         except IndexError:
             logger.error('No header found in catalog file...')
             sys.exit()
-            
+
         header = header[1:-1].split()
         ncols = len(header)
 
     reader.data.splitter.process_line = lambda x:process_line(x,ncols)
     return reader.read(catfile)
-    
+
 def process_line(x,ncols):
     splitx=x.split()
     nx = len(splitx)
     deltacol = ncols - nx
     if deltacol > 1:
         splitx += ['0']*deltacol
-    
+
     return ' '.join(splitx)
 
 
@@ -282,15 +282,15 @@ def apply_zeropoints(catalog, zeropoints, magkey='MAG_'):
 class Writer :
     def __init__(self, f):
         self.f = f
-        
+
     def close(self):
         self.f.close()
-        
+
     def write_comment(self, comment):
         self.f.write("# "+comment+NEWLINE)
-        
+
     def write_row(self, row):
         self.f.write(" ".join([str(e) for e in row])+NEWLINE)
 
 
-        
+
