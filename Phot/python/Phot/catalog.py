@@ -13,6 +13,7 @@ from astropy import units as u
 from astropy.io import ascii,fits
 from matplotlib.colors import LogNorm
 import numpy as np
+from scipy import stats
 from scipy.spatial import distance
 import matplotlib.pyplot as P
 import sys
@@ -121,10 +122,15 @@ def scattercols(catalog,field1,field2,title=None,xlab=None,ylab=None,log=False,s
     if show:
         p.show()
     
-def histogramcol(catalog,field,xlab=None,ylab="Counts",show=False,p=P,**kwargs):
+    
+def histogramcol(catalog,fieldx,fieldy,xlab=None,ylab="Counts",show=False,p=P,statistic="count",**kwargs):
     if xlab is None :
-        xlab = field
-    n, bins, patches = p.hist(np.array(catalog[field]), alpha=0.5,**kwargs)
+        xlab = fieldx   
+    y, bins, ibins = stats.binned_statistic(np.array(catalog[fieldx]),np.array(catalog[fieldy]), statistic=statistic,**kwargs)
+    
+    binw = (bins[1] - bins[0])
+    binx = bins[1:] - binw/2
+    p.bar(binx, y, width=binw, facecolor='r', edgecolor='k')
     p.xlabel(xlab)
     p.ylabel(ylab)
     p.legend(loc=0)
@@ -132,7 +138,7 @@ def histogramcol(catalog,field,xlab=None,ylab="Counts",show=False,p=P,**kwargs):
     if show:
         p.show()
 
-    return n, bins, patches    
+    return y, bins 
 
 def tag_catalog(catalog, tag):
     for cname in catalog.colnames :
@@ -264,10 +270,12 @@ def process_line(x,ncols):
     return ' '.join(splitx)
 
 
-def apply_zeropoints(catalog, zeropoints):
+def apply_zeropoints(catalog, zeropoints, magkey='MAG_'):
     cat = fits.open(catalog,mode='update')
     for hdu,zp in zip(cat[2::2],zeropoints):
-        hdu.data['MAG_AUTO']+=zp
+        magkeys = [k for k in hdu.data.names if k.startswith(magkey)]
+        for magkey in magkeys :
+            hdu.data[magkey]+=zp
     cat.flush()
 
 

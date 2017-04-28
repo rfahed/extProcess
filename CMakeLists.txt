@@ -9,9 +9,9 @@ find_package(ElementsProject)
 #===============================================================================
 # Declare project name and version
 # Example with dependency: 
-#                         elements_project(MyProject 1.0 USE Element 3.8)
+#                         elements_project(MyProject 1.0 USE Element 3.8 )
 #===============================================================================
 # 
 ###################
 
-elements_project(extProcess 0.0 USE Elements 4.0)
+elements_project(extProcess 0.0 USE Elements 4.0 extSim 1.1)
