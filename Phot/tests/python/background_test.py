@@ -94,7 +94,7 @@ class Testbackground(object):
         """
         Removes workspace
         """
-        shutil.rmtree(self.args.workspace)
+        shutil.rmtree(self.args.workspace, ignore_errors=True)
         
 
         
