@@ -6,17 +6,17 @@
 import py.test
 import os.path
 import glob
-from extSim import extsim, utils, image
+from extSim import extsim, utils
+from Phot import image 
 from astropy.io import fits
 import shutil
 from string import uppercase as amptags
 from fixtures.PyDataSyncFixture import *
-import ElementsKernel.Logging as logging
 from matplotlib import pylab as p
+
 import numpy as np
 from scipy.optimize import curve_fit
 
-log = logging.getLogger('image')
 
 data_dir = os.path.join(os.environ["PHOTROOT"],"tests", "data")
 
@@ -26,9 +26,9 @@ def symlinks(datafiles,workspace):
 
 def simulate():
     datafiles={"catalog.txt":"myEXTemptycat.txt", "target.json":"kids_target.json", "instrument.json":"oneccd_test_instrument.json"}
-    with utils.mock_workspace('test_smoke_sersics_ws_',del_tmp=False) as workspace:
+    with utils.mock_workspace('test_background_ws_',del_tmp=False) as workspace:
        symlinks(datafiles,workspace)
-       args = extsim.parseOptions(['--workspace',workspace],defaultconfig='smoke_test.conf')
+       args = extsim.parseOptions(['--workspace',workspace, '--flat_name', '', '--bias_name', ''],defaultconfig='smoke_test.conf')
        extsim.mainMethod(args)
     return args
 
@@ -59,10 +59,10 @@ class Testbackground(object):
         """
         Check that background fwhm is consistent with poisson + readout noise
         """
-        nbins=120
-        minb=20
+        nbins=60
+        minb=0
         bins=np.linspace(minb,minb+nbins-1,nbins)
-        n_sim, bins, patches = p.hist(self.im[1].data, bins=bins, alpha=0.5,label="sim image (band {})".format(filter))
+        n_sim, bins, patches = p.hist(self.im[1].data.ravel(), bins=bins, alpha=0.5,label="sim image")
 
         p.xlabel('pixel value (ADU)',size=20)
         p.ylabel('counts',size=20)
@@ -75,18 +75,27 @@ class Testbackground(object):
 
         p_s, var_matrix = curve_fit(image.gauss, bins, n_sim, p0=p0_s)
 
-        i_r=np.where(n_real==max(n_real))
-        i_r=i_r[0][0]
-        p0_r=[5000,bins[i_r],10]
-
-        p_r, var_matrix = curve_fit(image.gauss, bins, n_real, p0=p0_r)
-
         gauss_s = image.gauss(bins,*p_s)
+        p.plot(bins, gauss_s, '--',label='sigma = {:.1f}'.format(p_s[2]),linewidth=2)
+        
+        expected_bg_adu=image.smag2pix(self.im[1].header['SIMMAGBG'],self.instrument['PIXEL_SCALE'],self.im[1].header['SIMMAGZP'],exptime=self.im[0].header['EXPTIME'])
+        expected_fwhm=image.sigma_background(expected_bg_adu, self.im[1].header['RDNOISE'], self.im[1].header['GAIN'])
+        tol=1.
+        
+        p.title('expected fwhm = {:0.2f} ADUs'.format(expected_fwhm))
+        p.grid()
+        p.legend()
+        p.tight_layout()
+        p.savefig("test_fwhm.png")
+
+        assert abs(p_s[2] - expected_fwhm) < tol
         
     def teardown_class(self):
         """
         Removes workspace
         """
         shutil.rmtree(self.args.workspace)
+        
+
         
                     

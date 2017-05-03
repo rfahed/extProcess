@@ -82,6 +82,9 @@ def smag2pix(smag,pixscale,zp,exptime=1.):
     pixvalue=exptime*10.**((zp-smag)/2.5)*pixscale**2
     return pixvalue
 
+def sigma_background(counts_bg, readout_noise, gain):
+    return np.sqrt(1/gain*(counts_bg + readout_noise))
+
 def read_instrument(instrument_file):
     with open(instrument_file) as f :
         instrument = json.load(f)
