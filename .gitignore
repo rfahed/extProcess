@@ -1,7 +1,7 @@
 *.pyc
 ._*
 build.*/*
-extSim/tests/data/*
-!extSim/tests/data/config/
+Phot/tests/data/*
+!Phot/tests/data/config/
 .DS_Store
 InstallArea/
