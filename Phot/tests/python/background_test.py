@@ -28,7 +28,7 @@ def simulate():
     datafiles={"catalog.txt":"myEXTemptycat.txt", "target.json":"kids_target.json", "instrument.json":"oneccd_test_instrument.json"}
     with utils.mock_workspace('test_background_ws_',del_tmp=False) as workspace:
        symlinks(datafiles,workspace)
-       args = extsim.parseOptions(['--workspace',workspace, '--flat_name', '', '--bias_name', ''],defaultconfig='smoke_test.conf')
+       args = extsim.parseOptions(['--workspace',workspace],defaultconfig='background_test.conf')
        extsim.mainMethod(args)
     return args
 

@@ -14,7 +14,7 @@ from astropy.io import ascii,fits
 from matplotlib.colors import LogNorm
 import numpy as np
 from scipy import stats
-from scipy.spatial import distance
+from scipy.spatial import distance, KDTree
 import matplotlib.pyplot as P
 import sys
 
@@ -151,6 +151,52 @@ def matchcats(p1,p2,delta=1e-4):
     imatch2, imatch1, d2d, d3d = p1.search_around_sky(p2, delta*u.deg)
     #return (imatch, index[imatch])
     return (imatch1,imatch2,d2d)
+
+def search_around_pixel(cat1, cat2, sep, poskeys1=['X_IMAGE','Y_IMAGE'], poskeys2=['X_IMAGE','Y_IMAGE']):
+   kdt1 = KDTree(zip(cat1[poskeys1[0]], cat1[poskeys1[1]]))
+   kdt2 = KDTree(zip(cat2[poskeys2[0]], cat2[poskeys2[1]]))
+
+   idxs1 = []
+   idxs2 = []
+   for i, matches in enumerate(kdt1.query_ball_tree(kdt2, sep)):
+       for match in matches:
+           idxs1.append(i)
+           idxs2.append(match)
+   idxs1 = np.array(idxs1, dtype=np.int)
+   idxs2 = np.array(idxs2, dtype=np.int)
+   return idxs1, idxs2
+
+def mergecatpix(catalog1,catalog2, delta=1, poskeys1=['X_IMAGE','Y_IMAGE'], poskeys2=['X_IMAGE','Y_IMAGE'], mcats=['cat1_w_matchtags.cat','cat2_w_matchtags.cat'], stack=True):
+
+    imatch1, imatch2 = search_around_pixel(catalog1,catalog2,delta,poskeys1=poskeys1,poskeys2=poskeys2)
+    #distance=table.Column(name='DISTANCE',data=d) * 3600.0
+    m1=np.zeros(len(catalog1),dtype=int)
+    m1[imatch1]=1
+    m2=np.zeros(len(catalog2),dtype=int)
+    m2[imatch2]=1
+    matched1=table.Column(name='MATCHED',data=m1)
+    matched2=table.Column(name='MATCHED',data=m2)
+
+    if mcats :
+        catalog1.add_column(matched1)
+        catalog2.add_column(matched2)
+        #with open(mcats[0], 'w') as f :
+            #ascii.write(catalog1, f,Writer=ascii.CommentedHeader)
+        writefits(catalog1,mcats[0])
+        #with open(mcats[1], 'w') as f :
+            #ascii.write(catalog2, f,Writer=ascii.CommentedHeader)
+        writefits(catalog2,mcats[1])
+
+    catalog1 = catalog1._new_from_slice(imatch1)
+    catalog2 = catalog2._new_from_slice(imatch2)
+
+    if stack :
+        outcat = table.hstack([catalog1,catalog2])
+        #outcat.add_column(distance)
+        return outcat
+    else :
+        return (catalog1,catalog2)
+
 
 def mergecat(catalog1,catalog2, delta=1e-4, poskeys1=['X_WORLD','Y_WORLD'], poskeys2=['X_WORLD','Y_WORLD'], mcats=['cat1_w_matchtags.cat','cat2_w_matchtags.cat'], stack=True):
     p1=SkyCoord(catalog1[poskeys1[0]],catalog1[poskeys1[1]],frame='icrs',unit="deg")
