@@ -28,7 +28,7 @@ def simulate():
     datafiles={"target.json":"kids_target.json", "instrument.json":"oneccd_test_instrument.json"}
     with utils.mock_workspace('test_skymaker_ws_',del_tmp=False) as workspace:
        symlinks(datafiles,workspace)
-       args = extsim.parseOptions(['--workspace',workspace, '--truth_source', 'FAKESTARS'],defaultconfig='skymaker_test.conf')
+       args = extsim.parseOptions(['--workspace',workspace],defaultconfig='skymaker_test.conf')
        extsim.mainMethod(args)
     return args
 
@@ -69,7 +69,7 @@ class Testskymaker(object):
         #p.xlabel('Delta X (pixels)')
         #p.ylabel('Delta Y (pixels)')
         
-        catalog.scattercols(mergedcat,'DELTAX','DELTAY',xlab='Delta X (pixels)',ylab='Delta Y (pixels)',show=True)
+        catalog.scattercols(mergedcat,'DELTAX','DELTAY',xlab='Delta X (pixels)',ylab='Delta Y (pixels)',show=False)
         
         p.grid()
         p.legend()
@@ -78,17 +78,17 @@ class Testskymaker(object):
         
         p.figure()
         f, axarr = p.subplots(2, sharex=True)
-        axarr[0].hist(mergedcat['DELTAX'],bins=np.linspace(-3,3,61))
+        axarr[0].hist(mergedcat['DELTAX'],bins=np.linspace(-0.5,0.5,101))
         axarr[0].set_title('Delta X (pixels)')
-        axarr[1].hist(mergedcat['DELTAY'],bins=np.linspace(-3,3,61))
+        axarr[1].hist(mergedcat['DELTAY'],bins=np.linspace(-0.5,0.5,101))
         axarr[1].set_title('Delta Y (pixels)')
         
         p.grid()
         p.legend()
         p.tight_layout()
         p.savefig("test_positions_2.png")
-        
-        assert True
+        tol = 0.15
+        assert np.all(np.abs(mergedcat['DELTAX']) < tol) and np.all(np.abs(mergedcat['DELTAY']) < tol)
         
     def teardown_class(self):
         """

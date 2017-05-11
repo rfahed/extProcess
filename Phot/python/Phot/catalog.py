@@ -42,7 +42,7 @@ def mergecats(catalogs=None,delta=1e-4,filters=None,poskeys=['X_WORLD','Y_WORLD'
     return mergedcat
 
 def plot_vignet(cat,i,show=True,p=P):
-    p.imshow(cat['VIGNET'][i],cmap='gray_r',interpolation='none')
+    p.imshow(cat['VIGNET'][i],cmap='gray_r',interpolation='none', origin='lower')
     p.colorbar()
     if show :
         P.show()
@@ -96,8 +96,13 @@ def scattercols(catalog,field1,field2,title=None,xlab=None,ylab=None,log=False,s
         print((event.xdata,event.ydata))
         d=distance.cdist([[event.xdata,event.ydata]], catalog[field1,field2].__array__().transpose().tolist())
         i = d.argmin()
-        p.scatter(catalog[field1][i],catalog[field1][i],marker='*')
+        p.scatter(catalog[field1][i],catalog[field1][i],marker='*', s=25, c='r')
         pvignet=p.figure()
+        #try :
+        #   pixpos = [catalog["X_IMAGE"][i],catalog["Y_IMAGE"][i]]
+        #except KeyError:
+        #   pixpos = [catalog["X_IMAGE_1"][i],catalog["Y_IMAGE_1"][i]]
+        #pvignet.title("PIXEL POSITION : {:.2f} {:.2f}".format(*pixpos))
         plot_vignet(catalog,i,show=True)
 
 
