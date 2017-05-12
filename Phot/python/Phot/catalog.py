@@ -329,6 +329,11 @@ def apply_zeropoints(catalog, zeropoints, magkey='MAG_'):
             hdu.data[magkey]+=zp
     cat.flush()
 
+def world_to_pixel(catalog, wcs, pos_keys=['X_WORLD', 'Y_WORLD']):
+    return dict(zip(["X_IMAGE","Y_IMAGE"],wcs.all_world2pix(catalog[pos_keys[0]], catalog[pos_keys[1]], 1)))
+    
+def pixel_to_world(catalog, wcs, pos_keys=['X_IMAGE', 'Y_IMAGE']):
+    return dict(zip(["X_WORLD","Y_WORLD"],wcs.all_pix2world(catalog[pos_keys[0]], catalog[pos_keys[1]], 1)))
 
 class Writer :
     def __init__(self, f):
