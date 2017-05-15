@@ -41,4 +41,4 @@ class Teststamps(object):
         assert glob.glob(os.path.join(self.args.output_path, '*.fits'))
 
     def teardown_class(self):
-        shutil.rmtree(self.args.workspace)
+        shutil.rmtree(self.args.workspace, ignore_errors=True)

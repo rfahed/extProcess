@@ -94,7 +94,7 @@ class Testskymaker(object):
         """
         Removes workspace
         """
-        #shutil.rmtree(self.args.workspace, ignore_errors=True)
+        shutil.rmtree(self.args.workspace, ignore_errors=True)
         
 
         
