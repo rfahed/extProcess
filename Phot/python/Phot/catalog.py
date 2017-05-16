@@ -325,8 +325,8 @@ def apply_zeropoints(catalog, zeropoints, magkey='MAG_'):
     cat = fits.open(catalog,mode='update')
     for hdu,zp in zip(cat[2::2],zeropoints):
         magkeys = [k for k in hdu.data.names if k.startswith(magkey)]
-        for magkey in magkeys :
-            hdu.data[magkey]+=zp
+        for k in magkeys :
+            hdu.data[k]+=zp
     cat.flush()
 
 def world_to_pixel(catalog, wcs, pos_keys=['X_WORLD', 'Y_WORLD']):
