@@ -15,6 +15,35 @@ from string import Template
 from matplotlib import pylab as P
 import json
 
+
+def parse_section_list(sectionlist):
+    section = [sys.maxint, 0,sys.maxint, None]
+    for sectionstring in sectionlist :
+        s = parse_section_string(sectionstring)
+        section = [min(s[0],section[0]), max(s[1],section[1]), min(s[2],section[2]), max(s[3],section[3])]
+    return section
+    
+def parse_section_string(section):    
+    section=section[1:-1].replace(':',',').split(',')
+    section=map(int,section)
+    return section
+    
+def parse_section(section):
+    if type(section) is str:
+        return parse_section_string(section)
+    elif type(section) is list:
+        return parse_section_list(section)
+
+def get_section(header,*sections,**kwargs):
+    section = [sys.maxint, 0,sys.maxint, None]
+    for s in sections :
+        if 'i' in kwargs and kwargs['i'] != '' :
+            s = parse_section(header[s][uppercase.index(kwargs['i'])])
+        else:
+            s = parse_section(header[s])
+        section = [min(s[0],section[0]), max(s[1],section[1]), min(s[2],section[2]), max(s[3],section[3])]
+    return section
+
 def get_wcs(header):
     #KEYS_TO_DEL = ["PV{}_{}".format(i,j) for i in range(11) for j in range(11) ]
     #for k in KEYS_TO_DEL:
@@ -116,6 +145,15 @@ def sex(imname, zeropoint=0,outputcat=None):
         
     if p!=0 :
         sys.exit("SExtractor failed... Exiting.")
+
+def generate_weight_map(instrument):
+    wmap=fits.HDUList([fits.PrimaryHDU()])
+    for ccd in instrument["CCDS_LAYOUT"].values():
+        data=np.zeros((ccd["HEIGHT"],ccd["WIDTH"]))
+        datasec=get_section(ccd,"DATASEC")
+        data[datasec[2]-1:datasec[3]-1,datasec[0]-1:datasec[1]-1]=1
+        wmap.append(fits.ImageHDU(data.astype('uint8')))
+    return wmap
 
 def get_zeropoints(imname,apply_exptime=False,zerokey="SIMMAGZP"):
     im = fits.open(imname)

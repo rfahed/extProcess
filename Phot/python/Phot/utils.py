@@ -7,6 +7,7 @@
 import re
 import os
 
+
 def rm_extension(filename):
     matches = re.search('(.+)\..+',filename)
     if matches :

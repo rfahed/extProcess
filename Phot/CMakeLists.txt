@@ -58,6 +58,7 @@ elements_add_python_program(sextractor Phot.sextractor)
 elements_add_python_program(mergecatalogs Phot.mergecatalogs)
 elements_add_python_program(makeregionfile Phot.makeregionfile)
 elements_add_python_program(truewcs Phot.truewcs)
+elements_add_python_program(generate_weight_map Phot.generate_weight_map)
 
 #===============================================================================
 # Use the following macro for python modules, scripts and aux files:
