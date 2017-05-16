@@ -102,9 +102,9 @@ def sex(imname, zeropoint=0,outputcat=None):
         conftemp = Template(f.read())
     conf = conftemp.substitute({'zeropoint':str(zeropoint)})
     with open("default.sex",'w') as f :
-	f.write(conf)
+    f.write(conf)
     if outputcat is None :
-    	outputcat = utils.rm_extension(imname)+".cat"
+        outputcat = utils.rm_extension(imname)+".cat"
 
     cmd = ["sex",imname,"-c","default.sex"]
     cmd += ["-CATALOG_NAME",outputcat]
@@ -117,14 +117,14 @@ def sex(imname, zeropoint=0,outputcat=None):
     if p!=0 :
         sys.exit("SExtractor failed... Exiting.")
 
-def get_zeropoints(imname,apply_exptime=False,zerokey="MAGZERO"):
+def get_zeropoints(imname,apply_exptime=False,zerokey="SIMMAGZP"):
     im = fits.open(imname)
     zeropoints=[]
     for ext in im[1:]:
         z=ext.header[zerokey]
         if apply_exptime :
-    	    z += 2.5*np.log10(im[0].header['EXPTIME'])
-	    zeropoints.append(z)
+            z += 2.5*np.log10(im[0].header['EXPTIME'])
+        zeropoints.append(z)
 
     logger.info("Mag zeropoints : {}".format(zeropoints))
     return zeropoints
