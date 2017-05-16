@@ -102,7 +102,7 @@ def sex(imname, zeropoint=0,outputcat=None):
         conftemp = Template(f.read())
     conf = conftemp.substitute({'zeropoint':str(zeropoint)})
     with open("default.sex",'w') as f :
-    f.write(conf)
+        f.write(conf)
     if outputcat is None :
         outputcat = utils.rm_extension(imname)+".cat"
 
