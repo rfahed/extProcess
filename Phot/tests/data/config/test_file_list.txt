@@ -7,6 +7,7 @@ kids_testbias.fits
 myEXTrandomcat-sersics.txt
 myEXTrandomcat.txt
 myEXTemptycat.txt
+wcstest_catalog.txt
 oneccd_test_instrument.json
 des_test_instrument.json
 kids_test_instrument.json
