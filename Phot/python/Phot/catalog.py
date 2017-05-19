@@ -272,7 +272,7 @@ def toRegionFile(catalog, filename, symbol = 'ellipse', subtag='',wcs=True):
 
 def writefits(table,file):
     fitstable=fits.HDUList([fits.PrimaryHDU(),fits.BinTableHDU.from_columns(table.as_array())])
-    fitstable.writeto(file,overwrite=True)
+    fitstable.writeto(file,clobber=True)
 
 def readfits(catfile, imgext=None):
     fitscat=fits.open(catfile)
