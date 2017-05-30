@@ -14,4 +14,4 @@ find_package(ElementsProject)
 # 
 ###################
 
-elements_project(extProcess 0.0 USE Elements 4.0 extSim 1.1)
+elements_project(extProcess 0.0 USE Elements 4.0 extSim 1.2)
