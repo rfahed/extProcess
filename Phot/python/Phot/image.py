@@ -22,12 +22,12 @@ def parse_section_list(sectionlist):
         s = parse_section_string(sectionstring)
         section = [min(s[0],section[0]), max(s[1],section[1]), min(s[2],section[2]), max(s[3],section[3])]
     return section
-    
-def parse_section_string(section):    
+
+def parse_section_string(section):
     section=section[1:-1].replace(':',',').split(',')
     section=map(int,section)
     return section
-    
+
 def parse_section(section):
     if type(section) is str:
         return parse_section_string(section)
@@ -52,7 +52,7 @@ def get_wcs(header):
 
     wcs = WCS(header)
     return wcs
-    
+
 def get_footprint(header):
     wcs = get_wcs(header)
     footprint = wcs.calc_footprint(header)
@@ -77,9 +77,9 @@ def in_rect(rect,x,y):
         return False
     if ((x - bx) * bax + (y - by) * bay > 0.0):
         return False
-    if ((x - ax) * dax + (y - ay) * day < 0.0): 
+    if ((x - ax) * dax + (y - ay) * day < 0.0):
         return False
-    if ((x - dx) * dax + (y - dy) * day > 0.0): 
+    if ((x - dx) * dax + (y - dy) * day > 0.0):
         return False
 
     return True
@@ -107,6 +107,10 @@ def gauss(x, *p):
     A, mu, sigma = p
     return A*np.exp(-(x-mu)**2/(2.*sigma**2))
 
+def mag2adu(mag,zp,exptime=1.):
+    aduflux=exptime*10.**((zp-mag)/2.5)
+    return aduflux
+
 def smag2pix(smag,pixscale,zp,exptime=1.):
     pixvalue=exptime*10.**((zp-smag)/2.5)*pixscale**2
     return pixvalue
@@ -126,6 +130,21 @@ def updatewcs(im,instrument):
         for k,v in wcs.items():
             ext.header[k]=v
 
+def build_mask(radius, pos=(0,0)):
+    intradius=int(np.ceil(radius))
+    y,x = np.ogrid[-intradius: intradius+1, -intradius: intradius+1]
+    boolmask = x**2+y**2 <= radius**2
+    mask = np.where(boolmask==True)
+    mask = (mask[0]-intradius+pos[1],mask[1]-intradius+pos[0])
+    return mask
+
+def simple_aper_phot(im,positions,radius):
+    fluxes=[]
+    for pos in positions :
+        mask=build_mask(radius, pos=pos)
+        fluxes.append(sum(im.data[mask]))
+    return np.array(fluxes)
+
 def sex(imname, zeropoint=0,outputcat=None):
     with open(utils.getAuxPathFile("default.sex.template"),'r') as f :
         conftemp = Template(f.read())
@@ -142,7 +161,7 @@ def sex(imname, zeropoint=0,outputcat=None):
     cmd += ["-STARNNW_NAME",utils.getAuxPathFile("default.nnw")]
 
     p = subprocess.call(cmd)
-        
+
     if p!=0 :
         sys.exit("SExtractor failed... Exiting.")
 
@@ -166,5 +185,3 @@ def get_zeropoints(imname,apply_exptime=False,zerokey="SIMMAGZP"):
 
     logger.info("Mag zeropoints : {}".format(zeropoints))
     return zeropoints
-
-

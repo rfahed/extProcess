@@ -1,5 +1,6 @@
 des_target.json
 kids_target.json
+kids_target_nobg.json
 des_testflat.fits
 des_testbias.fits
 kids_testflat.fits
