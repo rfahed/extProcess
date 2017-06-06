@@ -61,14 +61,14 @@ class Testskymaker(object):
     def test_mags(self):
         tol = 10.
         inputcat = catalog.read(os.path.join(self.args.tmp_path, 'ccd_1.cat'))
-        pixradius = self.target["psf"]/self.instrument["PIXEL_SCALE"]
+        pixradius = 2*self.target["psf"]/self.instrument["PIXEL_SCALE"]
         positions = zip(inputcat["X_IMAGE"],inputcat["Y_IMAGE"])
         fluxes = image.simple_aper_phot(self.im[1],positions,pixradius)
         expected_flux = image.mag2adu(20.,self.target["zeropoint"],exptime=self.target["exptime"])
         assert np.all(np.abs(fluxes-expected_flux) < tol)
 
     def test_positions(self):
-        image.sex(os.path.join(self.args.output_path, 'output.fits'))
+        image.sex(os.path.join(self.args.output_path, 'output.fits'), zeropoint=self.target["zeropoint"]+2.5*np.log10(self.target["exptime"]))
         inputcat=catalog.read(os.path.join(self.args.tmp_path, 'ccd_1.cat'))
         outputcat=catalog.readfits(os.path.join(self.args.output_path, 'output.cat'))
         ouputcat=outputcat[outputcat["FLAGS"]==0]
@@ -86,7 +86,7 @@ class Testskymaker(object):
         p.grid()
         p.legend()
         p.tight_layout()
-        p.savefig("test_positions_1.png")
+        p.savefig("skymaker_test_positions_1.png")
 
         p.figure()
         f, axarr = p.subplots(2, sharex=True)
@@ -98,7 +98,7 @@ class Testskymaker(object):
         p.grid()
         p.legend()
         p.tight_layout()
-        p.savefig("test_positions_2.png")
+        p.savefig("skymaker_test_positions_2.png")
         tol = 0.15
         assert np.all(np.abs(mergedcat['DELTAX']) < tol) and np.all(np.abs(mergedcat['DELTAY']) < tol)
 
@@ -106,4 +106,4 @@ class Testskymaker(object):
         """
         Removes workspace
         """
-        shutil.rmtree(self.args.workspace, ignore_errors=True)
+        #shutil.rmtree(self.args.workspace, ignore_errors=True)
