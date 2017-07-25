@@ -7,7 +7,8 @@ import py.test
 import os.path
 import glob
 import json
-from extSim import extsim, utils
+import extSim.utils
+import extSim.extsim
 from Phot import image, catalog
 from astropy.io import fits
 import shutil
@@ -27,10 +28,10 @@ def symlinks(datafiles,workspace):
 
 def simulate():
     datafiles={"target.json":"kids_target_nobg.json", "instrument.json":"oneccd_test_instrument.json"}
-    with utils.mock_workspace('test_skymaker_ws_',del_tmp=False) as workspace:
+    with extSim.utils.mock_workspace('test_skymaker_ws_',del_tmp=False) as workspace:
        symlinks(datafiles,workspace)
-       args = extsim.parseOptions(['--workspace',workspace],defaultconfig='skymaker_test.conf')
-       extsim.mainMethod(args)
+       args = extSim.extsim.parseOptions(['--workspace',workspace],defaultconfig='skymaker_test.conf')
+       extSim.extsim.mainMethod(args)
     return args
 
 class Testskymaker(object):
@@ -44,7 +45,7 @@ class Testskymaker(object):
         self.del_tmp = True
         self.silent = True
         self.args = simulate()
-        self.instrument = utils.read_instrument(os.path.join(self.args.workspace,self.args.instrument))
+        self.instrument = extSim.utils.read_instrument(os.path.join(self.args.workspace,self.args.instrument))
         with open(os.path.join(self.args.workspace,self.args.target)) as f:
             self.target = json.load(f)
         try :

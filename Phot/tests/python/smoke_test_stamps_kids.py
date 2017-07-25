@@ -6,7 +6,8 @@
 import py.test
 import os.path
 import glob
-from extSim import extsim, utils
+import extSim.utils
+import extSim.extsim
 import shutil
 from fixtures.PyDataSyncFixture import *
 
@@ -18,10 +19,10 @@ def symlinks(datafiles,workspace):
 
 def simulate():
     datafiles={"catalog.txt":"myEXTrandomcat.txt", "target.json":"kids_target.json", "instrument.json":"kids_test_instrument.json", "flat.fits":"kids_testflat.fits", "bias.fits":"kids_testbias.fits", "stamps.fits":"EUC-TEST-STAMPS-2017-02-21T154652.049159.fits"}
-    with utils.mock_workspace('test_smoke_stamps_ws_',del_tmp=False) as workspace:
+    with extSim.utils.mock_workspace('test_smoke_stamps_ws_',del_tmp=False) as workspace:
        symlinks(datafiles,workspace)
-       args = extsim.parseOptions(['--workspace',workspace],defaultconfig='smoke_test.conf')
-       extsim.mainMethod(args)
+       args = extSim.extsim.parseOptions(['--workspace',workspace],defaultconfig='smoke_test.conf')
+       extSim.extsim.mainMethod(args)
     return args
 
 class Teststamps(object):

@@ -7,8 +7,9 @@ import py.test
 import os.path
 import glob
 import json
-from extSim import extsim, utils
-from Phot import image, catalog
+import extSim.utils
+import extSim.extsim
+from Phot import image, catalog, utils
 from astropy.io import fits
 import shutil
 from string import uppercase as amptags
@@ -27,10 +28,10 @@ def symlinks(datafiles,workspace):
 
 def simulate():
     datafiles={"target.json":"des_target_nobg.json", "instrument.json":"des_oneccd.json", "psf_1A.fits":PSFFILE, "psf_1B.fits":PSFFILE, "psf.fits":PSFFILE}
-    with utils.mock_workspace('test_psf_ws_',del_tmp=False) as workspace:
+    with extSim.utils.mock_workspace('test_psf_ws_',del_tmp=False) as workspace:
        symlinks(datafiles,workspace)
-       args = extsim.parseOptions(['--workspace',workspace],defaultconfig='psf_test.conf')
-       extsim.mainMethod(args)
+       args = extSim.extsim.parseOptions(['--workspace',workspace],defaultconfig='psf_test.conf')
+       extSim.extsim.mainMethod(args)
     return args
     
 def get_psf_size(psffile):
@@ -52,7 +53,8 @@ class Testpsf(object):
         self.del_tmp = True
         self.silent = True
         self.args = simulate()
-        self.instrument = utils.read_instrument(os.path.join(self.args.workspace,self.args.instrument))
+        self.instrument = extSim.utils.read_instrument(os.path.join(self.args.workspace,self.args.instrument))
+        self.figdir = utils.make_figures_dir(__name__)
         with open(os.path.join(self.args.workspace,self.args.target)) as f:
             self.target = json.load(f)
         try :
@@ -108,7 +110,7 @@ class Testpsf(object):
         p.grid()
         p.legend()
         p.tight_layout()
-        p.savefig("skymaker_test_positions_1.png")
+        p.savefig(os.path.join(self.figdir,"positions_1.png"))
 
         p.figure()
         f, axarr = p.subplots(2, sharex=True)
@@ -120,7 +122,7 @@ class Testpsf(object):
         p.grid()
         p.legend()
         p.tight_layout()
-        p.savefig("skymaker_test_positions_2.png")
+        p.savefig(os.path.join(self.figdir,"positions_2.png"))
         tol = 0.15
         assert (np.mean(mergedcat['DELTAX']) < tol) and (np.mean(mergedcat['DELTAY']) < tol)
     

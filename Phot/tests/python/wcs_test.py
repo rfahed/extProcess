@@ -6,8 +6,9 @@
 import py.test
 import os.path
 import glob
-from extSim import extsim, utils
-from Phot import image, catalog 
+import extSim.utils
+import extSim.extsim 
+from Phot import image, catalog, utils
 from astropy.io import fits
 from astropy.wcs import WCS
 from astropy import table
@@ -28,10 +29,10 @@ def symlinks(datafiles,workspace):
 
 def simulate():
     datafiles={"target.json":"kids_target.json", "instrument.json":"oneccd_test_instrument.json", "catalog.txt":"wcstest_catalog.txt"}
-    with utils.mock_workspace('test_wcs_ws_',del_tmp=False) as workspace:
+    with extSim.utils.mock_workspace('test_wcs_ws_',del_tmp=False) as workspace:
        symlinks(datafiles,workspace)
-       args = extsim.parseOptions(['--workspace',workspace],defaultconfig='wcs_test.conf')
-       extsim.mainMethod(args)
+       args = extSim.extsim.parseOptions(['--workspace',workspace],defaultconfig='wcs_test.conf')
+       extSim.extsim.mainMethod(args)
     return args
 
 class Testwcs(object):
@@ -45,11 +46,12 @@ class Testwcs(object):
         self.del_tmp = True
         self.silent = True
         self.args = simulate()
-        self.instrument = utils.read_instrument(os.path.join(self.args.workspace,self.args.instrument))
+        self.instrument = extSim.utils.read_instrument(os.path.join(self.args.workspace,self.args.instrument))
         try :
             self.im = fits.open(os.path.join(self.args.output_path, 'output.fits'))
         except :
             self.im = None
+        self.figdir = utils.make_figures_dir(__name__)
         
     def test_outfile(self):
         """
@@ -79,7 +81,7 @@ class Testwcs(object):
         p.grid()
         p.legend()
         p.tight_layout()
-        p.savefig("wcs_test_wcs_positions_1.png")
+        p.savefig(os.path.join(self.figdir,"wcs_positions_1.png"))
         
         p.figure()
         f, axarr = p.subplots(2, sharex=True)
@@ -91,7 +93,7 @@ class Testwcs(object):
         p.grid()
         p.legend()
         p.tight_layout()
-        p.savefig("wcs_test_wcs_positions_2.png")
+        p.savefig(os.path.join(self.figdir,"wcs_positions_2.png"))
         tol = 0.0001
         assert np.all(np.abs(mergedcat['DELTAX']) < tol) and np.all(np.abs(mergedcat['DELTAY']) < tol)
         
@@ -118,7 +120,7 @@ class Testwcs(object):
         p.grid()
         p.legend()
         p.tight_layout()
-        p.savefig("wcs_test_positions_1.png")
+        p.savefig(os.path.join(self.figdir,"positions_1.png"))
         
         p.figure()
         f, axarr = p.subplots(2, sharex=True)
@@ -130,7 +132,7 @@ class Testwcs(object):
         p.grid()
         p.legend()
         p.tight_layout()
-        p.savefig("wcs_test_positions_2.png")
+        p.savefig(os.path.join(self.figdir,"positions_2.png"))
         tol = 0.5
         assert (np.mean(mergedcat['DELTAX']) < tol) and (np.mean(mergedcat['DELTAY']) < tol)
   
@@ -153,7 +155,7 @@ class Testwcs(object):
         p.grid()
         p.legend()
         p.tight_layout()
-        p.savefig("wcs_test_pix_positions_1.png")
+        p.savefig(os.path.join(self.figdir,"wcs_test_pix_positions_1.png"))
         
         p.figure()
         f, axarr = p.subplots(2, sharex=True)
@@ -165,7 +167,7 @@ class Testwcs(object):
         p.grid()
         p.legend()
         p.tight_layout()
-        p.savefig("wcs_test_pix_positions_2.png")
+        p.savefig(os.path.join(self.figdir,"wcs_test_pix_positions_2.png"))
         tol = 0.15
         assert (np.mean(mergedcat['DELTAX']) < tol) and (np.mean(mergedcat['DELTAY']) < tol)
   

@@ -6,7 +6,8 @@
 import py.test
 import os.path
 import glob
-from extSim import extsim, utils
+import extSim.utils
+import extSim.extsim
 import shutil
 from fixtures.PyDataSyncFixture import *
 
@@ -24,10 +25,10 @@ def simulate():
                "bias.fits":"des_testbias.fits", 
                "stamps.fits":"stamps_galsim_pixscale-0.05_1.fits", 
                "psf.tar.gz":"psf_pixscale-0.18.tar.gz"}
-    with utils.mock_workspace('test_smoke_stamps_ws_',del_tmp=False) as workspace:
+    with extSim.utils.mock_workspace('test_smoke_stamps_ws_',del_tmp=False) as workspace:
        symlinks(datafiles,workspace)
-       args = extsim.parseOptions(['--workspace',workspace],defaultconfig='smoke_test.conf')
-       extsim.mainMethod(args)
+       args = extSim.extsim.parseOptions(['--workspace',workspace],defaultconfig='smoke_test.conf')
+       extSim.extsim.mainMethod(args)
     return args
 
 class Teststamps(object):

@@ -7,8 +7,9 @@ import py.test
 import os.path
 import glob
 import json
-from extSim import extsim, utils
-from Phot import image, catalog
+import extSim.utils
+import extSim.extsim
+from Phot import image, catalog, utils
 from astropy.io import fits
 import shutil
 from string import uppercase as amptags
@@ -27,10 +28,10 @@ def symlinks(datafiles,workspace):
 
 def simulate():
     datafiles={"target.json":"des_target_nobg.json", "instrument.json":"des_oneccd.json", "psf_1A.fits":PSFFILE, "psf_1B.fits":PSFFILE, "psf.fits":PSFFILE, "stamps.fits":"stamps_gauss_pixscale-0.05.fits"}
-    with utils.mock_workspace('test_stamp_ws_',del_tmp=False) as workspace:
+    with extSim.utils.mock_workspace('test_stamp_ws_',del_tmp=False) as workspace:
        symlinks(datafiles,workspace)
-       args = extsim.parseOptions(['--workspace',workspace],defaultconfig='stamp_test.conf')
-       extsim.mainMethod(args)
+       args = extSim.extsim.parseOptions(['--workspace',workspace],defaultconfig='stamp_test.conf')
+       extSim.extsim.mainMethod(args)
     return args
 
 def get_stamp_size(stampfile):
@@ -58,7 +59,8 @@ class Teststamp(object):
         self.del_tmp = True
         self.silent = True
         self.args = simulate()
-        self.instrument = utils.read_instrument(os.path.join(self.args.workspace,self.args.instrument))
+        self.figdir = utils.make_figures_dir(__name__)
+        self.instrument = extSim.utils.read_instrument(os.path.join(self.args.workspace,self.args.instrument))
         with open(os.path.join(self.args.workspace,self.args.target)) as f:
             self.target = json.load(f)
         try :
@@ -112,23 +114,23 @@ class Teststamp(object):
         #p.ylabel('Delta Y (pixels)')
 
         catalog.scattercols(mergedcat,'DELTAX','DELTAY',xlab='Delta X (pixels)',ylab='Delta Y (pixels)',show=False)
-
         p.grid()
         p.legend()
         p.tight_layout()
-        p.savefig("skymaker_test_positions_1.png")
+        p.savefig(os.path.join(self.figdir,"positions_1.png"))
 
         p.figure()
         f, axarr = p.subplots(2, sharex=True)
         axarr[0].hist(mergedcat['DELTAX'],bins=np.linspace(-0.5,0.5,101))
         axarr[0].set_title('Delta X (pixels)')
+        p.grid()
+        p.legend()
         axarr[1].hist(mergedcat['DELTAY'],bins=np.linspace(-0.5,0.5,101))
         axarr[1].set_title('Delta Y (pixels)')
-
         p.grid()
         p.legend()
         p.tight_layout()
-        p.savefig("skymaker_test_positions_2.png")
+        p.savefig(os.path.join(self.figdir,"positions_2.png"))
         tol = 0.15
         assert (np.mean(mergedcat['DELTAX']) < tol) and (np.mean(mergedcat['DELTAY']) < tol)
     

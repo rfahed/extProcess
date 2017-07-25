@@ -6,7 +6,8 @@
 import py.test
 import os.path
 import glob
-from extSim import extsim, utils
+import extSim.utils
+import extSim.extsim
 from Phot import image 
 from astropy.io import fits
 import shutil
@@ -26,10 +27,10 @@ def symlinks(datafiles,workspace):
 
 def simulate():
     datafiles={"catalog.txt":"myEXTemptycat.txt", "target.json":"kids_target.json", "instrument.json":"oneccd_test_instrument.json"}
-    with utils.mock_workspace('test_background_ws_',del_tmp=False) as workspace:
+    with extSim.utils.mock_workspace('test_background_ws_',del_tmp=False) as workspace:
        symlinks(datafiles,workspace)
-       args = extsim.parseOptions(['--workspace',workspace],defaultconfig='background_test.conf')
-       extsim.mainMethod(args)
+       args = extSim.extsim.parseOptions(['--workspace',workspace],defaultconfig='background_test.conf')
+       extSim.extsim.mainMethod(args)
     return args
 
 class Testbackground(object):
@@ -43,7 +44,7 @@ class Testbackground(object):
         self.del_tmp = True
         self.silent = True
         self.args = simulate()
-        self.instrument = utils.read_instrument(os.path.join(self.args.workspace,self.args.instrument))
+        self.instrument = extSim.utils.read_instrument(os.path.join(self.args.workspace,self.args.instrument))
         try :
             self.im = fits.open(os.path.join(self.args.output_path, 'output.fits'))
         except :
