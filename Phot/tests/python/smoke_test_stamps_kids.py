@@ -31,7 +31,7 @@ class Teststamps(object):
     """
 
     def setup_class(self): 
-        PyDataSyncFixture(os.path.join(data_dir,"config/sync.conf"), os.path.join(data_dir,"config/test_file_list.txt"))
+        PyDataSyncFixture("../../config/sync.conf", "../../config/test_file_list.txt")
         self.del_tmp = True
         self.silent = True
         self.args = simulate()

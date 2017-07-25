@@ -41,7 +41,7 @@ class Testwcs(object):
     """
     
     def setup_class(self): 
-        PyDataSyncFixture(os.path.join(data_dir,"config/sync.conf"), os.path.join(data_dir,"config/test_file_list.txt"))
+        PyDataSyncFixture("../../config/sync.conf", "../../config/test_file_list.txt")
         self.del_tmp = True
         self.silent = True
         self.args = simulate()
@@ -132,7 +132,7 @@ class Testwcs(object):
         p.tight_layout()
         p.savefig("wcs_test_positions_2.png")
         tol = 0.5
-        assert np.all(np.abs(mergedcat['DELTAX']) < tol) and np.all(np.abs(mergedcat['DELTAY']) < tol)
+        assert (np.mean(mergedcat['DELTAX']) < tol) and (np.mean(mergedcat['DELTAY']) < tol)
   
     def test_pix_positions(self):
         image.sex(os.path.join(self.args.output_path, 'output.fits'))
@@ -167,7 +167,7 @@ class Testwcs(object):
         p.tight_layout()
         p.savefig("wcs_test_pix_positions_2.png")
         tol = 0.15
-        assert np.all(np.abs(mergedcat['DELTAX']) < tol) and np.all(np.abs(mergedcat['DELTAY']) < tol)
+        assert (np.mean(mergedcat['DELTAX']) < tol) and (np.mean(mergedcat['DELTAY']) < tol)
   
         
     def teardown_class(self):

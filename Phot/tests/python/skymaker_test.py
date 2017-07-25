@@ -40,7 +40,7 @@ class Testskymaker(object):
     """
 
     def setup_class(self):
-        PyDataSyncFixture(os.path.join(data_dir,"config/sync.conf"), os.path.join(data_dir,"config/test_file_list.txt"))
+        PyDataSyncFixture("../../config/sync.conf", "../../config/test_file_list.txt")
         self.del_tmp = True
         self.silent = True
         self.args = simulate()
@@ -58,17 +58,30 @@ class Testskymaker(object):
         """
         assert glob.glob(os.path.join(self.args.output_path, 'output.fits'))
 
+    def test_mags_sex(self):
+        tolflux = 10.
+        tolmag = 0.01
+        image.sex(os.path.join(self.args.output_path, 'output.fits'), zeropoint=self.target["zeropoint"]+2.5*np.log10(self.target["exptime"]))
+        inputcat = catalog.read(os.path.join(self.args.tmp_path, 'ccd_1.cat'))
+        outputcat=catalog.readfits(os.path.join(self.args.output_path, 'output.cat'))
+        out_flux = np.median(outputcat["FLUX_AUTO"])
+        out_mag = np.median(outputcat["MAG_AUTO"])
+        expected_flux = image.mag2adu(inputcat["MAG"][0],self.target["zeropoint"],exptime=self.target["exptime"])
+        expected_mag = inputcat["MAG"][0]
+        assert np.abs(out_mag-expected_mag) < tolmag
+
     def test_mags(self):
         tol = 10.
         inputcat = catalog.read(os.path.join(self.args.tmp_path, 'ccd_1.cat'))
-        pixradius = 2*self.target["psf"]/self.instrument["PIXEL_SCALE"]
+        pixradius = 5.*self.target["psf"]/self.instrument["PIXEL_SCALE"]
         positions = zip(inputcat["X_IMAGE"],inputcat["Y_IMAGE"])
         fluxes = image.simple_aper_phot(self.im[1],positions,pixradius)
-        expected_flux = image.mag2adu(20.,self.target["zeropoint"],exptime=self.target["exptime"])
-        assert np.all(np.abs(fluxes-expected_flux) < tol)
+        mean_flux = np.median(fluxes)
+        expected_flux = image.mag2adu(inputcat["MAG"][0],self.target["zeropoint"],exptime=self.target["exptime"])
+        assert np.abs(mean_flux-expected_flux) < tol
 
     def test_positions(self):
-        image.sex(os.path.join(self.args.output_path, 'output.fits'), zeropoint=self.target["zeropoint"]+2.5*np.log10(self.target["exptime"]))
+        image.sex(os.path.join(self.args.output_path, 'output.fits'))
         inputcat=catalog.read(os.path.join(self.args.tmp_path, 'ccd_1.cat'))
         outputcat=catalog.readfits(os.path.join(self.args.output_path, 'output.cat'))
         ouputcat=outputcat[outputcat["FLAGS"]==0]
@@ -100,7 +113,7 @@ class Testskymaker(object):
         p.tight_layout()
         p.savefig("skymaker_test_positions_2.png")
         tol = 0.15
-        assert np.all(np.abs(mergedcat['DELTAX']) < tol) and np.all(np.abs(mergedcat['DELTAY']) < tol)
+        assert (np.mean(mergedcat['DELTAX']) < tol) and (np.mean(mergedcat['DELTAY']) < tol)
 
     def teardown_class(self):
         """
