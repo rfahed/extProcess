@@ -6,14 +6,19 @@
 
 import re
 import os
+import shutil
 
 def make_figures_dir(test_name=""):
     try :
         basedir = os.environ["EXTSIM_FIGURES_DIR"]
     except KeyError :
-        basedir = os.environ["User_area"]
+        basedir = os.environ["PWD"]
     
     figdir = os.path.join(basedir,"extSimFigures",test_name)
+    if not os.path.exists(figdir):
+        os.makedirs(figdir)
+    else:
+        shutil.rmtree(figdir)           
     os.makedirs(figdir)
     return figdir
 
