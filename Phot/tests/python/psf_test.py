@@ -14,7 +14,7 @@ from astropy.io import fits
 import shutil
 from string import uppercase as amptags
 from fixtures.PyDataSyncFixture import *
-from matplotlib import pylab as p
+from matplotlib import pylab as P
 import subprocess
 import numpy as np
 from scipy.optimize import curve_fit
@@ -39,6 +39,7 @@ def get_psf_size(psffile):
     i=int(psfgrid[0].data.shape[0]/2)
     j=int(psfgrid[0].data.shape[1]/2)
     vignet=psfgrid[0].data[i,j]
+    # 
     p = image.measure_psf(vignet, pixscale=psfgrid[0].header["PSF_SAMP"])
     return 2.3548*np.mean([p.x_stddev.value,p.y_stddev.value])
 
@@ -62,6 +63,7 @@ class Testpsf(object):
         except :
             self.im = None
         self.inputpsf = get_psf_size(os.path.join(self.args.workspace,"psf.fits"))*self.instrument["PIXEL_SCALE"]
+        P.savefig(os.path.join(self.figdir,"inputpsf.png"))
 
     def test_outfile(self):
         """
@@ -107,22 +109,22 @@ class Testpsf(object):
 
         catalog.scattercols(mergedcat,'DELTAX','DELTAY',xlab='Delta X (pixels)',ylab='Delta Y (pixels)',show=False)
 
-        p.grid()
-        p.legend()
-        p.tight_layout()
-        p.savefig(os.path.join(self.figdir,"positions_1.png"))
+        P.grid()
+        P.legend()
+        P.tight_layout()
+        P.savefig(os.path.join(self.figdir,"positions_1.png"))
 
-        p.figure()
-        f, axarr = p.subplots(2, sharex=True)
+        P.figure()
+        f, axarr = P.subplots(2, sharex=True)
         axarr[0].hist(mergedcat['DELTAX'],bins=np.linspace(-0.5,0.5,101))
         axarr[0].set_title('Delta X (pixels)')
         axarr[1].hist(mergedcat['DELTAY'],bins=np.linspace(-0.5,0.5,101))
         axarr[1].set_title('Delta Y (pixels)')
 
-        p.grid()
-        p.legend()
-        p.tight_layout()
-        p.savefig(os.path.join(self.figdir,"positions_2.png"))
+        P.grid()
+        P.legend()
+        P.tight_layout()
+        P.savefig(os.path.join(self.figdir,"positions_2.png"))
         tol = 0.15
         assert (np.mean(mergedcat['DELTAX']) < tol) and (np.mean(mergedcat['DELTAY']) < tol)
     

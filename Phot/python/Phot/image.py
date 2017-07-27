@@ -183,11 +183,10 @@ def measure_psf(vignet, pixscale=1., plot=False, mask_value=None):
         P.title("Data")
         P.subplot(1, 3, 2)
         P.imshow(p(x, y), origin='lower', interpolation='nearest', vmin=vignet.min(), vmax=vignet.max())
-        P.title("Model - psf = {}".format(2.3548*np.mean([p.x_stddev.value,p.y_stddev.value])))
+        P.title("Model - psf = {:.2f}".format(2.3548*np.mean([p.x_stddev.value,p.y_stddev.value])))
         P.subplot(1, 3, 3)
         P.imshow(vignet - p(x, y), origin='lower', interpolation='nearest', vmin=-vignet.max()/10,vmax=vignet.max()/10)
         P.title("Residual")
-        P.show()
     return p
     
 def simple_aper_phot(im,positions,radius):

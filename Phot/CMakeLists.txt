@@ -66,6 +66,9 @@ elements_add_python_program(generate_weight_map Phot.generate_weight_map)
 #  elements_install_scripts()
 #===============================================================================
 #elements_install_scripts()
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR})
+file(COPY tests/config DESTINATION ${CMAKE_BINARY_DIR})
+
 elements_install_scripts()
 elements_install_python_modules()
 
