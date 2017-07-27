@@ -12,7 +12,7 @@ def make_figures_dir(test_name=""):
     try :
         basedir = os.environ["EXTSIM_FIGURES_DIR"]
     except KeyError :
-        basedir = os.environ["PWD"]
+        basedir = os.environ["User_area"]
     
     figdir = os.path.join(basedir,"extSimFigures",test_name)
     if not os.path.exists(figdir):
