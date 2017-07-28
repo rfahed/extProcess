@@ -8,12 +8,11 @@ from matplotlib import pylab as p
 
 def measure_psf_snapshots(snapcat):
     snapcat=fits.open(snapcat)
-    #pixscale=image.get_pixscale(snapcat[0].header)
-    pixscale=0.19*0.263
+    pixscale=image.get_pixscale(snapcat[0].header)
     shape=snapcat[0].data.shape
     vignets=snapcat[0].data.reshape(shape[0]*shape[1],shape[2],shape[3])
 
-    psfs=image.measure_psfs(vignets, pixscale=pixscale, plot=True)
+    psfs=image.measure_psfs(vignets, pixscale=pixscale, show=True)
     return np.median(psfs)
     
 if __name__ == "__main__" :

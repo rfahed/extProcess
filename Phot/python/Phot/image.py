@@ -3,6 +3,7 @@
 @date 03/16/16
 @author user
 """
+from __future__ import division
 import ElementsKernel.Logging as log
 logger = log.getLogger('image')
 import subprocess, os, sys
@@ -16,6 +17,7 @@ import numpy.ma as ma
 from string import Template
 from matplotlib import pylab as P
 import json
+from scipy.ndimage.measurements import center_of_mass
 
 
 def parse_section_list(sectionlist):
@@ -150,43 +152,57 @@ def build_square_mask(radius, pos=(0,0)):
     mask = (mask[0]+pos[1],mask[1]+pos[0])
     return mask
 
-def measure_psfs_at(im,positions,radius,pixscale=1., plot=False):
+def measure_psfs_at(im,positions,radius,pixscale=1., show=False):
     psfs=[]
     for pos in positions :
         mask=build_square_mask(radius, pos=pos)
-        p = measure_psf(im.data[mask],pixscale=pixscale, plot=plot)
+        p = measure_psf(im.data[mask],pixscale=pixscale, show=show)
         psfs.append(2.3548*np.mean([p.x_stddev.value,p.y_stddev.value]))
     return np.array(psfs)
 
-def measure_psfs(vignets, pixscale=1, plot=False, mask_value=-1e30):
+def measure_psfs(vignets, pixscale=1, show=False, mask_value=-1e30):
     psfs=[]
     for vignet in vignets :
-        p = measure_psf(vignet,pixscale=pixscale, mask_value=mask_value, plot=plot)
+        p = measure_psf(vignet,pixscale=pixscale, mask_value=mask_value, show=show)
         psfs.append(2.3548*np.mean([p.x_stddev.value,p.y_stddev.value]))
     return np.array(psfs)
+
+def measure_barycenter(vignet,pixscale=1.):
+    x,y = center_of_mass(vignet)
+    x -= (vignet.shape[0]-1)/2
+    x *= pixscale
+    y -= (vignet.shape[1]-1)/2
+    y *= pixscale    
+    return (x,y)
     
-def measure_psf(vignet, pixscale=1., plot=False, mask_value=None):
-    y, x = np.mgrid[:vignet.shape[0], :vignet.shape[1]]*pixscale
+def measure_psf(vignet, pixscale=1., show=False, mask_value=None):
+    y, x = np.mgrid[-vignet.shape[0]/2:vignet.shape[0]/2, -vignet.shape[1]/2:vignet.shape[1]/2]*pixscale
     if mask_value :
         vignet = ma.masked_values(vignet, mask_value).filled(0)
     # Fit the data using astropy.modeling
-    p_init=models.Gaussian2D(amplitude=vignet.max(), x_mean=pixscale*vignet.shape[0]/2, y_mean=pixscale*vignet.shape[1]/2, x_stddev=2*pixscale, y_stddev=2*pixscale, theta=0, cov_matrix=None)
+    p_init=models.Gaussian2D(amplitude=vignet.max(), x_mean=0., y_mean=0., x_stddev=2*pixscale, y_stddev=2*pixscale, theta=0, cov_matrix=None)
     fit_p = fitting.LevMarLSQFitter()
 
     p = fit_p(p_init, x, y, vignet)
+    barycenter=measure_barycenter(vignet,pixscale=pixscale)
     
     # Plot the data with the best-fit model
-    if plot :
-        P.figure(figsize=(8, 2.5))
-        P.subplot(1, 3, 1)
-        P.imshow(vignet, origin='lower', interpolation='nearest', vmin=vignet.min(), vmax=vignet.max())
-        P.title("Data")
-        P.subplot(1, 3, 2)
-        P.imshow(p(x, y), origin='lower', interpolation='nearest', vmin=vignet.min(), vmax=vignet.max())
-        P.title("Model - psf = {:.2f}".format(2.3548*np.mean([p.x_stddev.value,p.y_stddev.value])))
-        P.subplot(1, 3, 3)
-        P.imshow(vignet - p(x, y), origin='lower', interpolation='nearest', vmin=-vignet.max()/10,vmax=vignet.max()/10)
-        P.title("Residual")
+    P.figure(figsize=(8, 2.5))
+    P.subplot(1, 3, 1)
+    P.imshow(vignet, origin='lower', interpolation='nearest', vmin=vignet.min(), vmax=vignet.max())
+    P.title("Data")
+    P.subplot(1, 3, 2)
+    P.imshow(p(x, y), origin='lower', interpolation='nearest', vmin=vignet.min(), vmax=vignet.max())
+    P.scatter(vignet.shape[0]/2,vignet.shape[1]/2,marker="+")
+    P.annotate("({:.3f},{:.3f})".format(*barycenter),(vignet.shape[0]/3,vignet.shape[1]/3))
+    P.title("Model - psf = {:.2f}".format(2.3548*np.mean([p.x_stddev.value,p.y_stddev.value])))
+    P.subplot(1, 3, 3)
+    P.imshow(vignet - p(x, y), origin='lower', interpolation='nearest', vmin=-vignet.max()/10,vmax=vignet.max()/10)
+    P.title("Residual")
+    P.tight_layout()
+    if show :
+        P.show()
+    
     return p
     
 def simple_aper_phot(im,positions,radius):

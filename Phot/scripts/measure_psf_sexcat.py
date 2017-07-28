@@ -13,7 +13,7 @@ def measure_psf_sexcat(sexcat):
     pixscale=image.get_pixscale(h)
     vignets=sexcat[2].data["VIGNET"]
 
-    psfs=image.measure_psfs(vignets, pixscale=pixscale, plot=False, mask_value=-1e+30)
+    psfs=image.measure_psfs(vignets, pixscale=pixscale, show=False, mask_value=-1e+30)
     return np.median(psfs)
     
 if __name__ == "__main__" :

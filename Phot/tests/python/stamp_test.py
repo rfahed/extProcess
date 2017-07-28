@@ -139,7 +139,7 @@ class Teststamp(object):
         inputcat = catalog.read(os.path.join(self.args.tmp_path, 'ccd_1B.cat'))
         pixradius = 2.*self.inputpsf/self.instrument["PIXEL_SCALE"]
         positions = zip(inputcat["X_IMAGE"],inputcat["Y_IMAGE"])
-        sizes=image.measure_psfs_at(self.im[1],positions,pixradius,pixscale=self.instrument["PIXEL_SCALE"], plot=False)
+        sizes=image.measure_psfs_at(self.im[1],positions,pixradius,pixscale=self.instrument["PIXEL_SCALE"], show=False)
         assert np.abs(np.median(sizes) - self.expected_outstampsize) < tol
     
     def teardown_class(self):

@@ -40,7 +40,7 @@ def get_psf_size(psffile):
     j=int(psfgrid[0].data.shape[1]/2)
     vignet=psfgrid[0].data[i,j]
     # 
-    p = image.measure_psf(vignet, pixscale=psfgrid[0].header["PSF_SAMP"])
+    p = image.measure_psf(vignet, pixscale=psfgrid[0].header["PSF_SAMP"], show=True)
     return 2.3548*np.mean([p.x_stddev.value,p.y_stddev.value])
 
 class Testpsf(object):
@@ -84,7 +84,7 @@ class Testpsf(object):
         assert np.abs(out_mag-expected_mag) < tolmag
 
     def test_mags(self):
-        tol = 10.
+        tol = 200.
         inputcat = catalog.read(os.path.join(self.args.tmp_path, 'ccd_1B.cat'))
         pixradius = 5.*self.inputpsf/self.instrument["PIXEL_SCALE"]
         positions = zip(inputcat["X_IMAGE"],inputcat["Y_IMAGE"])
@@ -133,7 +133,7 @@ class Testpsf(object):
         inputcat = catalog.read(os.path.join(self.args.tmp_path, 'ccd_1B.cat'))
         pixradius = 2.*self.inputpsf/self.instrument["PIXEL_SCALE"]
         positions = zip(inputcat["X_IMAGE"],inputcat["Y_IMAGE"])
-        psfs=image.measure_psfs_at(self.im[1],positions,pixradius,pixscale=self.instrument["PIXEL_SCALE"],plot=False)
+        psfs=image.measure_psfs_at(self.im[1],positions,pixradius,pixscale=self.instrument["PIXEL_SCALE"],show=False)
         assert np.abs(np.median(psfs) - self.inputpsf) < tol
     
     def teardown_class(self):

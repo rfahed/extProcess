@@ -9,7 +9,7 @@ import glob
 import json
 import extSim.utils
 import extSim.extsim
-from Phot import image, catalog
+from Phot import image, catalog, utils
 from astropy.io import fits
 import shutil
 from string import uppercase as amptags
@@ -46,6 +46,7 @@ class Testskymaker(object):
         self.silent = True
         self.args = simulate()
         self.instrument = extSim.utils.read_instrument(os.path.join(self.args.workspace,self.args.instrument))
+        self.figdir = utils.make_figures_dir(__name__)
         with open(os.path.join(self.args.workspace,self.args.target)) as f:
             self.target = json.load(f)
         try :
@@ -100,7 +101,7 @@ class Testskymaker(object):
         p.grid()
         p.legend()
         p.tight_layout()
-        p.savefig("skymaker_test_positions_1.png")
+        p.savefig(os.path.join(self.figdir,"positions_1.png"))
 
         p.figure()
         f, axarr = p.subplots(2, sharex=True)
@@ -112,8 +113,8 @@ class Testskymaker(object):
         p.grid()
         p.legend()
         p.tight_layout()
-        p.savefig("skymaker_test_positions_2.png")
-        tol = 0.15
+        p.savefig(os.path.join(self.figdir,"positions_2.png"))
+        tol = 0.05
         assert (np.mean(mergedcat['DELTAX']) < tol) and (np.mean(mergedcat['DELTAY']) < tol)
 
     def teardown_class(self):

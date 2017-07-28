@@ -19,7 +19,7 @@ def make_figures_dir(test_name=""):
         os.makedirs(figdir)
     else:
         shutil.rmtree(figdir)           
-    os.makedirs(figdir)
+        os.makedirs(figdir)
     return figdir
 
 
