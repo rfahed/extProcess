@@ -237,8 +237,9 @@ class PyDataSyncFixture(object):
         
         # Run command and get output
         #log.info(cmd)
-        output = PyDataSyncFixture.executeCommand(cmd)
-        return output
+        if not self._overwrite and os.path.exists(dst):
+            output = PyDataSyncFixture.executeCommand(cmd)
+            return output
     
     def getSourcePath(self, dst):
         """Get the (distant) source path associated to a (local) destination path.
