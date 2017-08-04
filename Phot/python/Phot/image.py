@@ -212,6 +212,38 @@ def simple_aper_phot(im,positions,radius):
         fluxes.append(sum(im.data[mask]))
     return np.array(fluxes)
 
+def build_annulus_mask(in_radius, out_radius, pos=(0,0)):
+    ''' Build annulus mask to extract the flux inside a ring shape from the
+    center of the object
+    Parameters:
+        - in_radius: inside radius (smaller distance from the center)
+        - out_radius: outside radius
+        - pos: position of the object
+    '''
+    intradius=int(np.ceil(out_radius))
+    y,x = np.ogrid[-intradius: intradius+1, -intradius: intradius+1]
+    boolmask = (x**2+y**2 >= in_radius**2) & (x**2+y**2 <= out_radius**2)
+    mask = np.where(boolmask==True)
+    mask = (mask[0]-intradius+pos[1],mask[1]-intradius+pos[0])
+    return mask
+
+def annulus_phot(im, positions, in_radius, out_radius):
+    ''' Intergral flux of a ring shape from the center of an object inside
+        an image
+    Parameters:
+        - im: image data (n*m pixel)
+        - positions: center position of object
+        - in_radius: inside radius (smaller distance from the center)
+        - out_radius: outside radius
+    '''
+    fluxes = []
+    for pos in positions:
+        mask = build_annulus_mask(in_radius, out_radius, pos=pos)
+        fluxes.append(sum(im.data[mask]))
+    total_bg_pixels = np.shape(mask[1])
+    return np.array(fluxes)
+
+
 def sex(imname, zeropoint=0,outputcat=None):
     with open(utils.getAuxPathFile("default.sex.template"),'r') as f :
         conftemp = Template(f.read())
