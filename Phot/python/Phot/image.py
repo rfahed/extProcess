@@ -227,7 +227,7 @@ def build_annulus_mask(in_radius, out_radius, pos=(0,0)):
     mask = (mask[0]-intradius+pos[1],mask[1]-intradius+pos[0])
     return mask
 
-def annulus_phot(im, positions, in_radius, out_radius):
+def annulus_photometry(im, positions, in_radius, out_radius):
     ''' Intergral flux of a ring shape from the center of an object inside
         an image
     Parameters:
@@ -240,7 +240,7 @@ def annulus_phot(im, positions, in_radius, out_radius):
     for pos in positions:
         mask = build_annulus_mask(in_radius, out_radius, pos=pos)
         fluxes.append(sum(im.data[mask]))
-    total_bg_pixels = np.shape(mask[1])
+    #total_bg_pixels = np.shape(mask[1])
     return np.array(fluxes)
 
 
@@ -284,3 +284,6 @@ def get_zeropoints(imname,apply_exptime=False,zerokey="SIMMAGZP"):
 
     logger.info("Mag zeropoints : {}".format(zeropoints))
     return zeropoints
+
+def flux2mag(flux, zeropoint, exptime):
+    return -2.5*np.log10(flux*1./exptime) + zeropoint
