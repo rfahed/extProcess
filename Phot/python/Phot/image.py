@@ -287,3 +287,24 @@ def get_zeropoints(imname,apply_exptime=False,zerokey="SIMMAGZP"):
 
 def flux2mag(flux, zeropoint, exptime):
     return -2.5*np.log10(flux*1./exptime) + zeropoint
+
+def get_ccd_wcs(telescope_pointing, instrument):
+    ccd = instrument['CCDS_LAYOUT'][1]
+    ccd['WCS'][u'CRVAL1']  = telescope_pointing['ra']
+    ccd['WCS'][u'CRVAL2'] = telescope_pointing['dec']
+    wcs_ccd = WCS(ccd['WCS'])
+    return wcs_ccd
+
+def generate_fake_star_catalog(telescope_pointing, instrument, step, objtype, magnitude):
+    ccd = instrument['CCDS_LAYOUT'][1]
+    wcs_ccd = get_ccd_wcs(telescope_pointing, instrument)
+    with open('my_star_pixel_catalog.txt', 'w') as f_pix:
+        with open("my_star_catalog.txt", 'w') as f_world:
+            f_pix.write("#Objtype X_IMAGE Y_IMAGE \n")
+            f_world.write("#Objtype Ra Dec Mag \n")
+            for i in xrange(step, ccd['WIDTH'], step):
+                for j in xrange(step, ccd['HEIGHT'], step):
+                    f_pix.write("%d %d %d" %(objtype, i, j) + "\n")
+                    ra, dec = wcs_ccd.all_pix2world(i, j, 1)
+                    f_world.write("%d %f %f %.2f" %(objtype, ra, dec, magnitude) + "\n")
+
