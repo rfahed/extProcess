@@ -309,3 +309,29 @@ def generate_fake_star_catalog(telescope_pointing, instrument, step, objtype, ma
                     ra, dec = wcs_ccd.all_pix2world(i, j, 1)
                     f_world.write("%d %f %f %.2f" %(objtype, ra, dec, magnitude) + "\n")
 
+def weighted_center(im):
+    x = 0
+    y = 0
+    weight = 0
+    for i in xrange(np.shape(im)[0]):
+        for j in xrange(np.shape(im)[1]):
+            x += (i+1)*im[i,j]
+            y += (j+1)*im[i,j]
+            weight += im[i,j]
+    x_center = x/weight
+    y_center = y/weight
+    return x_center, y_center
+
+def weighted_std(im, x_center, y_center):
+    x_std2 = 0
+    y_std2 = 0
+    weight = 0
+    for i in xrange(np.shape(im)[0]):
+        for j in xrange(np.shape(im)[1]):
+            x_std2 += ((i+1)-x_center)**2
+            y_std2 += ((j+1)-y_center)**2
+            weight += im[i,j]
+    x_std = x_std2/weight
+    y_std = y_std2/weight
+    return x_std, y_std2
+    
