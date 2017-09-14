@@ -328,10 +328,10 @@ def weighted_std(im, x_center, y_center):
     weight = 0
     for i in xrange(np.shape(im)[0]):
         for j in xrange(np.shape(im)[1]):
-            x_std2 += ((i+1)-x_center)**2
-            y_std2 += ((j+1)-y_center)**2
+            x_std2 += ((i+1)-x_center)**2 * im[i,j]
+            y_std2 += ((j+1)-y_center)**2 * im[i,j]
             weight += im[i,j]
-    x_std = x_std2/weight
-    y_std = y_std2/weight
-    return x_std, y_std2
+    x_std = np.sqrt(x_std2*1./weight)
+    y_std = np.sqrt(y_std2*1./weight)
+    return x_std, y_std
     
