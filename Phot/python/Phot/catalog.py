@@ -41,7 +41,7 @@ def mergecats(catalogs=None,delta=1e-4,filters=None,poskeys=['X_WORLD','Y_WORLD'
 
     return mergedcat
 
-def plot_vignet(cat,i,show=True,p=P):
+def plot_vignet(cat,i,show=False,p=P):
     p.imshow(cat['VIGNET'][i],cmap='gray_r',interpolation='none', origin='lower')
     p.colorbar()
     if show :

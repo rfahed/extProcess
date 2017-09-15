@@ -29,9 +29,6 @@ from future_builtins import *
 import argparse
 import os
 import subprocess
-import ElementsKernel.Logging as logging
-
-log = logging.getLogger('PyDataSyncFixture')
 
 class DataHost:
     """The test data hosting solution.
@@ -39,10 +36,11 @@ class DataHost:
     
     IRODS = "iRODS"
     WEBDAV = "WebDAV"
+    HTTPS = "HTTPS"
     DSS = "DSS"
     UNKNOWN = "unknown"
     
-    __all__ = [IRODS, WEBDAV, DSS, UNKNOWN]
+    __all__ = [IRODS, WEBDAV, HTTPS, DSS, UNKNOWN]
     
     @staticmethod
     def is_valid(p):
@@ -79,6 +77,9 @@ class PyDataSyncFixture(object):
         # Default values
         self._fileMap = {}
         self._host = DataHost.UNKNOWN
+        self._hostURL = None
+        self._user = None
+        self._password = None
         self._overwrite = False
         self._distant = ""
         self._local = ""
@@ -115,6 +116,9 @@ class PyDataSyncFixture(object):
         # Declare options
         parser = argparse.ArgumentParser()
         parser.add_argument("--host", type=str, help="Hosting solution (only WebDAV is supported for now)")
+        parser.add_argument("--host-url", type=str, help="Host URL if needed")
+        parser.add_argument("--user", type=str, help="User name if needed")
+        parser.add_argument("--password", type=str, help="Password if needed")
         parser.add_argument("--overwrite", type=bool, help="Allow overwriting local files if they already exist")
         parser.add_argument("--distant-workspace", type=str, help="Path to distant repository workspace")
         parser.add_argument("--local-workspace", type=str, help="Path to local repository workspace")
@@ -128,11 +132,14 @@ class PyDataSyncFixture(object):
         with open(configFile) as f:
             for line in f:
                 if not line == '\n':
-                    values.append("--" + line.replace('\n', ''))
+                    values.append("--" + line.replace('\n', '').replace(' ', ''))
         args = parser.parse_args(values)
         
         # Configure object
         self._host = PyDataSyncFixture.parseDataHost(args.host)
+        self._hostURL = args.host_url
+        self._user = args.user
+        self._password = args.password
         self._overwrite = args.overwrite
         self._distant = args.distant_workspace
         self._local = args.local_workspace
@@ -201,7 +208,6 @@ class PyDataSyncFixture(object):
             src = self._fileMap[dst]
             
             # Download
-            
             self.downloadDependency(src, dst, execute)
             count += 1 #TODO fail case
         
@@ -216,11 +222,14 @@ class PyDataSyncFixture(object):
         
         # iRods
         if self._host == DataHost.IRODS:
-            if self._overwrite:
-                cmd += "irsync i:"
-            else:
-                cmd += "iget "
+            cmd += "iget "
             cmd += src + " " + dst
+        
+        elif self._host == DataHost.WEBDAV:
+            cmd = "wget --no-check-certificate ";
+            cmd += " --user=" + str(self._user);
+            cmd += " --password=" + str(self._password);
+            cmd += " -O " + dst + " " + str(self._hostURL) + src;
         
         # Unknown host
         else:
@@ -236,10 +245,11 @@ class PyDataSyncFixture(object):
             os.mkdir(dir)
         
         # Run command and get output
-        #log.info(cmd)
-        if not self._overwrite and os.path.exists(dst):
+        if not self._overwrite and os.access(dst, os.F_OK) and os.stat(dst).st_size > 0 :
+            output = 0
+        else : 
             output = PyDataSyncFixture.executeCommand(cmd)
-            return output
+        return output
     
     def getSourcePath(self, dst):
         """Get the (distant) source path associated to a (local) destination path.

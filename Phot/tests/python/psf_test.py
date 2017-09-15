@@ -40,7 +40,7 @@ def get_psf_size(psffile):
     j=int(psfgrid[0].data.shape[1]/2)
     vignet=psfgrid[0].data[i,j]
     # 
-    p = image.measure_psf(vignet, pixscale=psfgrid[0].header["PSF_SAMP"], show=True)
+    p = image.measure_psf(vignet, pixscale=psfgrid[0].header["PSF_SAMP"], show=False)
     return 2.3548*np.mean([p.x_stddev.value,p.y_stddev.value])
 
 class Testpsf(object):

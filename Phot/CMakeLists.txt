@@ -54,6 +54,8 @@ elements_depends_on_subdirs(ElementsKernel)
 # elements_add_python_program(PythonProgramExample 
 #                             ElementsExamples.PythonProgramExample)
 #===============================================================================
+elements_install_scripts()
+elements_install_python_modules()
 elements_add_python_program(sextractor Phot.sextractor)
 elements_add_python_program(mergecatalogs Phot.mergecatalogs)
 elements_add_python_program(makeregionfile Phot.makeregionfile)
@@ -69,8 +71,7 @@ elements_add_python_program(generate_weight_map Phot.generate_weight_map)
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR})
 file(COPY tests/config DESTINATION ${CMAKE_BINARY_DIR})
 
-elements_install_scripts()
-elements_install_python_modules()
+
 
 #===============================================================================
 # Add the elements_install_conf_files macro 
